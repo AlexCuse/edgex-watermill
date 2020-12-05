@@ -28,7 +28,9 @@ import (
 type watermillClient struct {
 	message.Publisher
 	message.Subscriber
-	context context.Context
+	context   context.Context
+	marshal   WatermillMarshaler
+	unmarshal WatermillUnmarshaler
 }
 
 const (
@@ -41,12 +43,12 @@ func (c *watermillClient) Connect() error {
 }
 
 func (c *watermillClient) Publish(env types.MessageEnvelope, topic string) error {
-	m := message.NewMessage(env.CorrelationID, env.Payload)
+	m, err := c.marshal(env)
 
-	m.Metadata.Set(EdgeXChecksum, env.Checksum)
-	m.Metadata.Set(EdgeXContentType, env.ContentType)
-
-	err := c.Publisher.Publish(topic, m)
+	if err != nil {
+		return err
+	}
+	err = c.Publisher.Publish(topic, m)
 
 	if err != nil {
 		return err
@@ -68,33 +70,10 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 				case <-ctx.Done():
 					return
 				case msg := <-sub:
-					correlationID := msg.UUID
-
-					if correlationID == "" {
-						correlationID = uuid.New().String()
-					}
-
-					checksum := msg.Metadata.Get(EdgeXChecksum)
-
-					contentType := msg.Metadata.Get(EdgeXContentType)
-
-					if contentType == "" {
-						if msg.Payload[0] == byte('{') || msg.Payload[0] == byte('[') {
-							contentType = clients.ContentTypeJSON
-						} else {
-							contentType = clients.ContentTypeCBOR
-						}
-					}
-
-					formattedMessage := types.MessageEnvelope{
-						Payload:       msg.Payload,
-						CorrelationID: correlationID,
-						ContentType:   contentType,
-						Checksum:      checksum,
-					}
+					formattedMessage, err := c.unmarshal(msg)
 
 					if err != nil {
-						//TODO: can we get message errors from watermill subscriber?  May need to wire in differently
+						//TODO: can we get message errors from watermill subscriber as well?  May need to wire in differently
 						errors <- err
 					} else {
 						topic.Messages <- formattedMessage
@@ -119,7 +98,73 @@ func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.
 		pub,
 		sub,
 		ctx,
+		defaultMarshaler,
+		defaultUnmarshaler,
 	}
 
 	return &client, nil
+}
+
+type WatermillClientOptions struct {
+	Marshaler   WatermillMarshaler
+	Unmarshaler WatermillUnmarshaler
+}
+
+func NewWatermillClientWithOptions(ctx context.Context, pub message.Publisher, sub message.Subscriber, opt WatermillClientOptions) (messaging.MessageClient, error) {
+	client, err := NewWatermillClient(ctx, pub, sub)
+
+	if err != nil {
+		return client, err
+	}
+
+	if opt.Marshaler != nil {
+		client.(*watermillClient).marshal = opt.Marshaler
+	}
+
+	if opt.Unmarshaler != nil {
+		client.(*watermillClient).unmarshal = opt.Unmarshaler
+	}
+
+	return client, nil
+}
+
+type WatermillUnmarshaler func(*message.Message) (types.MessageEnvelope, error)
+
+func defaultUnmarshaler(msg *message.Message) (types.MessageEnvelope, error) {
+	correlationID := msg.UUID
+
+	if correlationID == "" {
+		correlationID = uuid.New().String()
+	}
+
+	checksum := msg.Metadata.Get(EdgeXChecksum)
+
+	contentType := msg.Metadata.Get(EdgeXContentType)
+
+	if contentType == "" {
+		if msg.Payload[0] == byte('{') || msg.Payload[0] == byte('[') {
+			contentType = clients.ContentTypeJSON
+		} else {
+			contentType = clients.ContentTypeCBOR
+		}
+	}
+
+	formattedMessage := types.MessageEnvelope{
+		Payload:       msg.Payload,
+		CorrelationID: correlationID,
+		ContentType:   contentType,
+		Checksum:      checksum,
+	}
+	return formattedMessage, nil
+}
+
+type WatermillMarshaler func (types.MessageEnvelope) (*message.Message, error)
+
+func defaultMarshaler (envelope types.MessageEnvelope) (*message.Message, error){
+	m := message.NewMessage(envelope.CorrelationID, envelope.Payload)
+
+	m.Metadata.Set(EdgeXChecksum, envelope.Checksum)
+	m.Metadata.Set(EdgeXContentType, envelope.ContentType)
+
+	return m, nil
 }
