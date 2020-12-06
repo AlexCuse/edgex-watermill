@@ -19,10 +19,8 @@ package edgex_watermill
 import (
 	"context"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-messaging/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
-	"github.com/google/uuid"
 )
 
 type watermillClient struct {
@@ -126,45 +124,4 @@ func NewWatermillClientWithOptions(ctx context.Context, pub message.Publisher, s
 	}
 
 	return client, nil
-}
-
-type WatermillUnmarshaler func(*message.Message) (types.MessageEnvelope, error)
-
-func defaultUnmarshaler(msg *message.Message) (types.MessageEnvelope, error) {
-	correlationID := msg.UUID
-
-	if correlationID == "" {
-		correlationID = uuid.New().String()
-	}
-
-	checksum := msg.Metadata.Get(EdgeXChecksum)
-
-	contentType := msg.Metadata.Get(EdgeXContentType)
-
-	if contentType == "" {
-		if msg.Payload[0] == byte('{') || msg.Payload[0] == byte('[') {
-			contentType = clients.ContentTypeJSON
-		} else {
-			contentType = clients.ContentTypeCBOR
-		}
-	}
-
-	formattedMessage := types.MessageEnvelope{
-		Payload:       msg.Payload,
-		CorrelationID: correlationID,
-		ContentType:   contentType,
-		Checksum:      checksum,
-	}
-	return formattedMessage, nil
-}
-
-type WatermillMarshaler func (types.MessageEnvelope) (*message.Message, error)
-
-func defaultMarshaler (envelope types.MessageEnvelope) (*message.Message, error){
-	m := message.NewMessage(envelope.CorrelationID, envelope.Payload)
-
-	m.Metadata.Set(EdgeXChecksum, envelope.Checksum)
-	m.Metadata.Set(EdgeXContentType, envelope.ContentType)
-
-	return m, nil
 }
