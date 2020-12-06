@@ -48,7 +48,7 @@ func kafkaConsumerConfig(options types.MessageBusConfig) kafka.SubscriberConfig 
 		saramaConfig.ClientID = clientid
 	}
 
-	if qc, found := options.Optional["QueueCapacity"]; found {
+	if qc, found := options.Optional["ChannelBufferSize"]; found {
 		qcap, err := strconv.Atoi(qc)
 
 		if err != nil {
@@ -119,36 +119,6 @@ func kafkaConsumerConfig(options types.MessageBusConfig) kafka.SubscriberConfig 
 		saramaConfig.Consumer.Group.Session.Timeout = sto
 	}
 
-	if rt, found := options.Optional["RebalanceTimeout"]; found {
-		rto, err := time.ParseDuration(rt)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Group.Rebalance.Timeout = rto
-	}
-
-	if jgb, found := options.Optional["JoinGroupBackoff"]; found {
-		jgbo, err := time.ParseDuration(jgb)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Group.Rebalance.Retry.Backoff = jgbo
-	}
-
-	if rt, found := options.Optional["RetentionTime"]; found {
-		rtime, err := time.ParseDuration(rt)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Offsets.Retention = rtime
-	}
-
 	if so, found := options.Optional["StartOffset"]; found {
 		if so == "-1" || strings.EqualFold(so, "newest") {
 			saramaConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
@@ -160,13 +130,10 @@ func kafkaConsumerConfig(options types.MessageBusConfig) kafka.SubscriberConfig 
 	}
 
 	return kafka.SubscriberConfig{
-		Brokers:                []string{options.SubscribeHost.Host + ":" + strconv.Itoa(options.SubscribeHost.Port)},
-		Unmarshaler:            kafka.DefaultMarshaler{},
-		OverwriteSaramaConfig:  saramaConfig,
-		ConsumerGroup:          options.Optional["ConsumerGroupID"],
-		NackResendSleep:        0,
-		ReconnectRetrySleep:    0,
-		InitializeTopicDetails: nil,
+		Brokers:               []string{options.SubscribeHost.Host + ":" + strconv.Itoa(options.SubscribeHost.Port)},
+		Unmarshaler:           kafka.DefaultMarshaler{},
+		OverwriteSaramaConfig: saramaConfig,
+		ConsumerGroup:         options.Optional["ConsumerGroupID"],
 	}
 }
 
@@ -187,7 +154,7 @@ func kafkaProducerConfig(options types.MessageBusConfig) kafka.PublisherConfig {
 		saramaConfig.ClientID = clientid
 	}
 
-	if qc, found := options.Optional["QueueCapacity"]; found {
+	if qc, found := options.Optional["ChannelBufferSize"]; found {
 		qcap, err := strconv.Atoi(qc)
 
 		if err != nil {
@@ -195,46 +162,6 @@ func kafkaProducerConfig(options types.MessageBusConfig) kafka.PublisherConfig {
 		}
 
 		saramaConfig.ChannelBufferSize = qcap
-	}
-
-	if cmi, found := options.Optional["CommitInterval"]; found {
-		ci, err := time.ParseDuration(cmi)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Flush.Frequency = ci
-	}
-
-	if ma, found := options.Optional["MaxAttempts"]; found {
-		mxa, err := strconv.Atoi(ma)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Retry.Max = mxa
-	}
-
-	if bs, found := options.Optional["BatchSize"]; found {
-		bsz, err := strconv.Atoi(bs)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Flush.Messages = bsz
-	}
-
-	if bb, found := options.Optional["BatchBytes"]; found {
-		bby, err := strconv.Atoi(bb)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Flush.Bytes = bby
 	}
 
 	if wt, found := options.Optional["WriteTimeout"]; found {
@@ -259,6 +186,26 @@ func kafkaProducerConfig(options types.MessageBusConfig) kafka.PublisherConfig {
 			saramaConfig.Producer.RequiredAcks = sarama.RequiredAcks(0)
 			break
 		}
+	}
+
+	if rm, found := options.Optional["RetryMax"]; found {
+		rmi, err := strconv.Atoi(rm)
+
+		if err != nil {
+			panic(err)
+		}
+
+		saramaConfig.Producer.Retry.Max = rmi
+	}
+
+	if rb, found := options.Optional["RetryBackoff"]; found {
+		rbd, err := time.ParseDuration(rb)
+
+		if err != nil {
+			panic(err)
+		}
+
+		saramaConfig.Producer.Retry.Backoff = rbd
 	}
 
 	return kafka.PublisherConfig{

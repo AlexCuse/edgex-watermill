@@ -3,7 +3,6 @@ github.com/Shopify/sarama v1.27.2 h1:1EyY1dsxNDUQEv0O/4TsjosHI2CgB1uo9H/v56xzTxc
 github.com/Shopify/sarama v1.27.2/go.mod h1:g5s5osgELxgM+Md9Qni9rzo7Rbt+vvFQI4bt/Mc93II=
 github.com/Shopify/toxiproxy v2.1.4+incompatible h1:TKdv8HiTLgE5wdJuEML90aBgNWsokNbMijUGhmcoBJc=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/ThreeDotsLabs/watermill v1.0.2 h1:UGiE61pRWAMwEX3z/AVZTaZmm/Y+AeEd+cXoeQz9NuM=
 github.com/ThreeDotsLabs/watermill v1.0.2/go.mod h1:vZCPh7eN0P7r2qKau4SfmcUZ83+3JXWkRl4BiWUlqFw=
 github.com/ThreeDotsLabs/watermill v1.1.1 h1:+9NXqWQvplzxBru2CIInvVOZeKUnM+Nysg42fInl5sY=
 github.com/ThreeDotsLabs/watermill v1.1.1/go.mod h1:Qd1xNFxolCAHCzcMrm6RnjW0manbvN+DJVWc1MWRFlI=

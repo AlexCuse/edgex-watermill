@@ -8,4 +8,6 @@ require (
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0
 	github.com/alexcuse/edgex-watermill v0.0.0-20201205174724-22b0c0af8696
 	github.com/edgexfoundry/go-mod-messaging v0.1.28
+	github.com/google/uuid v1.1.2
+	github.com/stretchr/testify v1.6.1
 )
