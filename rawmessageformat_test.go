@@ -26,7 +26,7 @@ import (
 	"testing"
 )
 
-func TestDefaultMarshaler_HasCorrelationId(t *testing.T) {
+func TestRawMessageFormat_Marshal_HasCorrelationID(t *testing.T) {
 	env := types.MessageEnvelope{
 		Checksum:      uuid.New().String(),
 		CorrelationID: uuid.New().String(),
@@ -34,7 +34,9 @@ func TestDefaultMarshaler_HasCorrelationId(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
-	msg, err := defaultMarshaler(env)
+	sut := RawMessageFormat{}
+
+	msg, err := sut.Marshal(env)
 
 	require.Nil(t, err, "should not return error")
 
@@ -47,7 +49,7 @@ func TestDefaultMarshaler_HasCorrelationId(t *testing.T) {
 	require.Equal(t, env.Checksum, msg.Metadata.Get(EdgeXChecksum), "should store checksum in metadata")
 }
 
-func TestDefaultMarshaler_NoCorrelationId(t *testing.T) {
+func TestRawMessageFormat_Marshal_NoCorrelationId(t *testing.T) {
 	env := types.MessageEnvelope{
 		Checksum:      uuid.New().String(),
 		CorrelationID: "",
@@ -55,7 +57,9 @@ func TestDefaultMarshaler_NoCorrelationId(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
-	msg, err := defaultMarshaler(env)
+	sut := RawMessageFormat{}
+
+	msg, err := sut.Marshal(env)
 
 	require.Nil(t, err, "should not return error")
 
@@ -68,7 +72,7 @@ func TestDefaultMarshaler_NoCorrelationId(t *testing.T) {
 	require.Equal(t, env.Checksum, msg.Metadata.Get(EdgeXChecksum), "should store checksum in metadata")
 }
 
-func TestDefaultUnmarshaler_HasCorrelationId(t *testing.T) {
+func TestRawMessageFormat_Unmarshal_HasCorrelationId(t *testing.T) {
 	correlationID := uuid.New().String()
 	contentType := uuid.New().String()
 	checksum := uuid.New().String()
@@ -78,7 +82,9 @@ func TestDefaultUnmarshaler_HasCorrelationId(t *testing.T) {
 	msg.Metadata.Set(EdgeXContentType, contentType)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	env, err := defaultUnmarshaler(msg)
+	sut := RawMessageFormat{}
+
+	env, err := sut.Unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -88,7 +94,7 @@ func TestDefaultUnmarshaler_HasCorrelationId(t *testing.T) {
 	require.Equal(t, contentType, env.ContentType, "should include content type if passed in metadata")
 }
 
-func TestDefaultUnmarshaler_HasMessageID(t *testing.T) {
+func TestRawMessageFormat_Unmarshal_HasMessageID(t *testing.T) {
 	messageID := uuid.New().String()
 	contentType := uuid.New().String()
 	checksum := uuid.New().String()
@@ -97,7 +103,9 @@ func TestDefaultUnmarshaler_HasMessageID(t *testing.T) {
 	msg.Metadata.Set(EdgeXContentType, contentType)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	env, err := defaultUnmarshaler(msg)
+	sut := RawMessageFormat{}
+
+	env, err := sut.Unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -107,7 +115,7 @@ func TestDefaultUnmarshaler_HasMessageID(t *testing.T) {
 	require.Equal(t, contentType, env.ContentType, "should include content type if passed in metadata")
 }
 
-func TestDefaultUnmarshaler_HasNoID(t *testing.T) {
+func TestRawMessageFormat_Marshal_HasNoID(t *testing.T) {
 	contentType := uuid.New().String()
 	checksum := uuid.New().String()
 
@@ -115,7 +123,9 @@ func TestDefaultUnmarshaler_HasNoID(t *testing.T) {
 	msg.Metadata.Set(EdgeXContentType, contentType)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	env, err := defaultUnmarshaler(msg)
+	sut := RawMessageFormat{}
+
+	env, err := sut.Unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -125,7 +135,7 @@ func TestDefaultUnmarshaler_HasNoID(t *testing.T) {
 	require.Equal(t, contentType, env.ContentType, "should include content type if passed in metadata")
 }
 
-func TestDefaultUnmarshaler_InfersCBORByDefault(t *testing.T) {
+func TestRawMessageFormat_Unmarshal_InfersCBORByDefault(t *testing.T) {
 	correlationID := uuid.New().String()
 	checksum := uuid.New().String()
 
@@ -133,7 +143,9 @@ func TestDefaultUnmarshaler_InfersCBORByDefault(t *testing.T) {
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	env, err := defaultUnmarshaler(msg)
+	sut := RawMessageFormat{}
+
+	env, err := sut.Unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -143,7 +155,7 @@ func TestDefaultUnmarshaler_InfersCBORByDefault(t *testing.T) {
 	require.Equal(t, clients.ContentTypeCBOR, env.ContentType, "should include content type if passed in metadata")
 }
 
-func TestDefaultUnmarshaler_InfersJSONForObject(t *testing.T) {
+func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
 	correlationID := uuid.New().String()
 	checksum := uuid.New().String()
 
@@ -151,7 +163,9 @@ func TestDefaultUnmarshaler_InfersJSONForObject(t *testing.T) {
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	env, err := defaultUnmarshaler(msg)
+	sut := RawMessageFormat{}
+
+	env, err := sut.Unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -161,7 +175,7 @@ func TestDefaultUnmarshaler_InfersJSONForObject(t *testing.T) {
 	require.Equal(t, clients.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
 }
 
-func TestDefaultUnmarshaler_InfersJSONForArray(t *testing.T) {
+func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
 	correlationID := uuid.New().String()
 	checksum := uuid.New().String()
 
@@ -169,7 +183,9 @@ func TestDefaultUnmarshaler_InfersJSONForArray(t *testing.T) {
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	env, err := defaultUnmarshaler(msg)
+	sut := RawMessageFormat{}
+
+	env, err := sut.Unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 

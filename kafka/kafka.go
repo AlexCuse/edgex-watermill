@@ -238,9 +238,21 @@ func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messagi
 
 		sub = s
 	}
+
+	var fmt ewm.MessageFormat
+
+	switch strings.ToLower(config.Optional["WatermillFormat"]) {
+	case "raw":
+		fmt = &ewm.EdgeXJSONMessageFormat{}
+	case "edgexjson":
+	default:
+		fmt = &ewm.RawMessageFormat{}
+	}
+
 	return ewm.NewWatermillClient(
 		ctx,
 		pub,
 		sub,
+		fmt,
 	)
 }

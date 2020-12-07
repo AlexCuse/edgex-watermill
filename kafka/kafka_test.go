@@ -252,6 +252,7 @@ func TestKafkaProducerConfig_RequiredAcks_OneNumeric(t *testing.T) {
 	require.NotNil(t, watermillConfig.OverwriteSaramaConfig)
 	require.Equal(t, sarama.RequiredAcks(1), watermillConfig.OverwriteSaramaConfig.Producer.RequiredAcks, "default offset")
 }
+
 func TestKafkaProducerConfig_RequiredAcks_All(t *testing.T) {
 	options := types.MessageBusConfig{
 		PublishHost: types.HostInfo{

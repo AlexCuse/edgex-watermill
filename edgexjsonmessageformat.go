@@ -17,19 +17,27 @@
 package edgex_watermill
 
 import (
+	"encoding/json"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 )
 
-type MessageFormat interface {
-	WatermillMarshaler
-	WatermillUnmarshaler
+type EdgeXJSONMessageFormat struct{}
+
+func (*EdgeXJSONMessageFormat) Marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+	jsn, err := json.Marshal(envelope)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return message.NewMessage(envelope.CorrelationID, jsn), nil
 }
 
-type WatermillMarshaler interface {
-	Marshal(envelope types.MessageEnvelope) (*message.Message, error)
-}
+func (*EdgeXJSONMessageFormat) Unmarshal(message *message.Message) (types.MessageEnvelope, error) {
+	env := types.MessageEnvelope{}
 
-type WatermillUnmarshaler interface {
-	Unmarshal(*message.Message) (types.MessageEnvelope, error)
+	err := json.Unmarshal(message.Payload, &env)
+
+	return env, err
 }

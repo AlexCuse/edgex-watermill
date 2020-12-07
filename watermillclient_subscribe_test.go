@@ -41,6 +41,14 @@ func (mp *mockSubscriber) Subscribe(ctx context.Context, topic string) (<-chan *
 
 func (mp *mockSubscriber) Close() error { return nil }
 
+type mockUnmarshaler struct {
+	unmarshaled types.MessageEnvelope
+}
+
+func (m *mockUnmarshaler) Unmarshal(message *message.Message) (types.MessageEnvelope, error) {
+	return m.unmarshaled, nil
+}
+
 func TestSubscribe(t *testing.T) {
 	msgs := make(chan *message.Message, 1)
 	env := types.MessageEnvelope{}
@@ -56,10 +64,8 @@ func TestSubscribe(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	client, err := NewWatermillClientWithOptions(ctx, nil, &subscriber, WatermillClientOptions{
-		Unmarshaler: func(m *message.Message) (types.MessageEnvelope, error) {
-			return env, nil
-		},
+	client, err := newWatermillClientWithOptions(ctx, nil, &subscriber, WatermillClientOptions{
+		Unmarshaler: &mockUnmarshaler{unmarshaled: env},
 	})
 
 	require.Nil(t, err, "should initialize client")

@@ -26,9 +26,9 @@ import (
 type watermillClient struct {
 	message.Publisher
 	message.Subscriber
-	context   context.Context
-	marshal   WatermillMarshaler
-	unmarshal WatermillUnmarshaler
+	context     context.Context
+	marshaler   WatermillMarshaler
+	unmarshaler WatermillUnmarshaler
 }
 
 const (
@@ -41,7 +41,7 @@ func (c *watermillClient) Connect() error {
 }
 
 func (c *watermillClient) Publish(env types.MessageEnvelope, topic string) error {
-	m, err := c.marshal(env)
+	m, err := c.marshaler.Marshal(env)
 
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 				case <-ctx.Done():
 					return
 				case msg := <-sub:
-					formattedMessage, err := c.unmarshal(msg)
+					formattedMessage, err := c.unmarshaler.Unmarshal(msg)
 
 					if err != nil {
 						//TODO: can we get message errors from watermill subscriber as well?  May need to wire in differently
@@ -91,16 +91,15 @@ func (c *watermillClient) Disconnect() error {
 	return nil
 }
 
-func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber) (messaging.MessageClient, error) {
-	client := watermillClient{
-		pub,
-		sub,
-		ctx,
-		defaultMarshaler,
-		defaultUnmarshaler,
+func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format MessageFormat) (messaging.MessageClient, error) {
+	if format == nil {
+		format = &EdgeXJSONMessageFormat{}
 	}
 
-	return &client, nil
+	return newWatermillClientWithOptions(ctx, pub, sub, WatermillClientOptions{
+		Marshaler:   format,
+		Unmarshaler: format,
+	})
 }
 
 type WatermillClientOptions struct {
@@ -108,19 +107,13 @@ type WatermillClientOptions struct {
 	Unmarshaler WatermillUnmarshaler
 }
 
-func NewWatermillClientWithOptions(ctx context.Context, pub message.Publisher, sub message.Subscriber, opt WatermillClientOptions) (messaging.MessageClient, error) {
-	client, err := NewWatermillClient(ctx, pub, sub)
-
-	if err != nil {
-		return client, err
-	}
-
-	if opt.Marshaler != nil {
-		client.(*watermillClient).marshal = opt.Marshaler
-	}
-
-	if opt.Unmarshaler != nil {
-		client.(*watermillClient).unmarshal = opt.Unmarshaler
+func newWatermillClientWithOptions(ctx context.Context, pub message.Publisher, sub message.Subscriber, opt WatermillClientOptions) (messaging.MessageClient, error) {
+	client := &watermillClient{
+		pub,
+		sub,
+		ctx,
+		opt.Marshaler,
+		opt.Unmarshaler,
 	}
 
 	return client, nil

@@ -44,6 +44,14 @@ func (mp *mockPublisher) Publish(topic string, messages ...*message.Message) err
 
 func (mp *mockPublisher) Close() error { return nil }
 
+type mockMarshaler struct {
+	marshaled *message.Message
+}
+
+func (m *mockMarshaler) Marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+	return m.marshaled, nil
+}
+
 func TestPublish(t *testing.T) {
 	topic := uuid.New().String()
 	payload := types.MessageEnvelope{}
@@ -51,10 +59,8 @@ func TestPublish(t *testing.T) {
 
 	publisher := mockPublisher{}
 
-	client, err := NewWatermillClientWithOptions(context.Background(), &publisher, nil, WatermillClientOptions{
-		Marshaler: func(envelope types.MessageEnvelope) (*message.Message, error) {
-			return marshaled, nil
-		},
+	client, err := newWatermillClientWithOptions(context.Background(), &publisher, nil, WatermillClientOptions{
+		Marshaler: &mockMarshaler{marshaled: marshaled},
 	})
 
 	require.Nil(t, err, "should initialize client")
