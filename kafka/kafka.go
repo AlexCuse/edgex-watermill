@@ -23,6 +23,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	ewm "github.com/alexcuse/edgex-watermill"
+	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
 	"github.com/edgexfoundry/go-mod-messaging/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"strconv"
@@ -220,7 +221,7 @@ func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messagi
 	var sub message.Subscriber
 
 	if config.PublishHost.Host != "" {
-		p, err := kafka.NewPublisher(kafkaProducerConfig(config), watermill.NewCaptureLogger())
+		p, err := createPublisher(config)
 
 		if err != nil {
 			return nil, err
@@ -230,7 +231,7 @@ func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messagi
 	}
 
 	if config.SubscribeHost.Host != "" {
-		s, err := kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
+		s, err := createSubscriber(config)
 
 		if err != nil {
 			return nil, err
@@ -255,4 +256,45 @@ func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messagi
 		sub,
 		fmt,
 	)
+}
+
+func createPublisher(config types.MessageBusConfig) (message.Publisher, error) {
+	return kafka.NewPublisher(kafkaProducerConfig(config), watermill.NewCaptureLogger())
+}
+
+func createSubscriber(config types.MessageBusConfig) (message.Subscriber, error) {
+	return kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
+}
+
+func NewKafkaTrigger(ctx context.Context, seed appsdk.ContextSeed, processor appsdk.ProcessMessageFunc) (appsdk.Trigger, error) {
+	var pub message.Publisher
+	var sub message.Subscriber
+
+	if seed.Configuration.MessageBus.PublishHost.Host != "" {
+		p, err := createPublisher(seed.Configuration.MessageBus)
+
+		if err != nil {
+			return nil, err
+		}
+
+		pub = p
+	}
+
+	if seed.Configuration.MessageBus.SubscribeHost.Host != "" {
+		s, err := createSubscriber(seed.Configuration.MessageBus)
+
+		if err != nil {
+			return nil, err
+		}
+
+		sub = s
+	}
+
+	return ewm.NewWatermillTrigger(
+		pub,
+		sub,
+		ctx,
+		seed,
+		processor,
+	), nil
 }
