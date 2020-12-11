@@ -38,7 +38,7 @@ func TestEdgeXJSONMessageFormat_Marshal(t *testing.T) {
 
 	sut := EdgeXJSONMessageFormat{}
 
-	msg, err := sut.Marshal(env)
+	msg, err := sut.marshal(env)
 
 	require.Nil(t, err, "should not return error")
 
@@ -62,7 +62,7 @@ func TestEdgeXJSONMessageFormat_Unmarshal(t *testing.T) {
 
 	sut := EdgeXJSONMessageFormat{}
 
-	result, err := sut.Unmarshal(msg)
+	result, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 	require.NotNil(t, result, "should return result")
@@ -77,7 +77,7 @@ func TestEdgeXJSONMessageFormat_Unmarshal_JSONError(t *testing.T) {
 
 	sut := EdgeXJSONMessageFormat{}
 
-	result, err := sut.Unmarshal(msg)
+	result, err := sut.unmarshal(msg)
 
 	require.NotNil(t, err, "should return error")
 	require.Zero(t, result, "should not return result")

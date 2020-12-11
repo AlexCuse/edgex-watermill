@@ -24,7 +24,7 @@ import (
 
 type EdgeXJSONMessageFormat struct{}
 
-func (*EdgeXJSONMessageFormat) Marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+func (*EdgeXJSONMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
 	jsn, err := json.Marshal(envelope)
 
 	if err != nil {
@@ -34,7 +34,7 @@ func (*EdgeXJSONMessageFormat) Marshal(envelope types.MessageEnvelope) (*message
 	return message.NewMessage(envelope.CorrelationID, jsn), nil
 }
 
-func (*EdgeXJSONMessageFormat) Unmarshal(message *message.Message) (types.MessageEnvelope, error) {
+func (*EdgeXJSONMessageFormat) unmarshal(message *message.Message) (types.MessageEnvelope, error) {
 	env := types.MessageEnvelope{}
 
 	err := json.Unmarshal(message.Payload, &env)

@@ -36,7 +36,7 @@ func TestRawMessageFormat_Marshal_HasCorrelationID(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	msg, err := sut.Marshal(env)
+	msg, err := sut.marshal(env)
 
 	require.Nil(t, err, "should not return error")
 
@@ -59,7 +59,7 @@ func TestRawMessageFormat_Marshal_NoCorrelationId(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	msg, err := sut.Marshal(env)
+	msg, err := sut.marshal(env)
 
 	require.Nil(t, err, "should not return error")
 
@@ -84,7 +84,7 @@ func TestRawMessageFormat_Unmarshal_HasCorrelationId(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	env, err := sut.Unmarshal(msg)
+	env, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -105,7 +105,7 @@ func TestRawMessageFormat_Unmarshal_HasMessageID(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	env, err := sut.Unmarshal(msg)
+	env, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -125,7 +125,7 @@ func TestRawMessageFormat_Marshal_HasNoID(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	env, err := sut.Unmarshal(msg)
+	env, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -145,7 +145,7 @@ func TestRawMessageFormat_Unmarshal_InfersCBORByDefault(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	env, err := sut.Unmarshal(msg)
+	env, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -165,7 +165,7 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	env, err := sut.Unmarshal(msg)
+	env, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 
@@ -185,7 +185,7 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
 
 	sut := RawMessageFormat{}
 
-	env, err := sut.Unmarshal(msg)
+	env, err := sut.unmarshal(msg)
 
 	require.Nil(t, err, "should not return error")
 

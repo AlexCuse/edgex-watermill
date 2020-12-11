@@ -22,14 +22,10 @@ import (
 )
 
 type MessageFormat interface {
-	WatermillMarshaler
-	WatermillUnmarshaler
+	marshal(envelope types.MessageEnvelope) (*message.Message, error)
+	unmarshal(*message.Message) (types.MessageEnvelope, error)
 }
 
-type WatermillMarshaler interface {
-	Marshal(envelope types.MessageEnvelope) (*message.Message, error)
-}
+type WatermillMarshaler func(envelope types.MessageEnvelope) (*message.Message, error)
 
-type WatermillUnmarshaler interface {
-	Unmarshal(*message.Message) (types.MessageEnvelope, error)
-}
+type WatermillUnmarshaler func(*message.Message) (types.MessageEnvelope, error)

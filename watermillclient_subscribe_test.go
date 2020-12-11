@@ -65,7 +65,7 @@ func TestSubscribe(t *testing.T) {
 	defer cancel()
 
 	client, err := newWatermillClientWithOptions(ctx, nil, &subscriber, WatermillClientOptions{
-		Unmarshaler: &mockUnmarshaler{unmarshaled: env},
+		Unmarshaler: (&mockUnmarshaler{unmarshaled: env}).Unmarshal,
 	})
 
 	require.Nil(t, err, "should initialize client")

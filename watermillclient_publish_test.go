@@ -60,7 +60,7 @@ func TestPublish(t *testing.T) {
 	publisher := mockPublisher{}
 
 	client, err := newWatermillClientWithOptions(context.Background(), &publisher, nil, WatermillClientOptions{
-		Marshaler: &mockMarshaler{marshaled: marshaled},
+		Marshaler: (&mockMarshaler{marshaled: marshaled}).Marshal,
 	})
 
 	require.Nil(t, err, "should initialize client")

@@ -26,7 +26,7 @@ import (
 
 type RawMessageFormat struct{}
 
-func (*RawMessageFormat) Marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+func (*RawMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
 	correlationID := envelope.CorrelationID
 
 	if correlationID == "" {
@@ -42,7 +42,7 @@ func (*RawMessageFormat) Marshal(envelope types.MessageEnvelope) (*message.Messa
 	return m, nil
 }
 
-func (*RawMessageFormat) Unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
+func (*RawMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
 	correlationID := msg.Metadata.Get(middleware.CorrelationIDMetadataKey)
 
 	if correlationID == "" {

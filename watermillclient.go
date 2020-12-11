@@ -41,7 +41,7 @@ func (c *watermillClient) Connect() error {
 }
 
 func (c *watermillClient) Publish(env types.MessageEnvelope, topic string) error {
-	m, err := c.marshaler.Marshal(env)
+	m, err := c.marshaler(env)
 
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 				case <-ctx.Done():
 					return
 				case msg := <-sub:
-					formattedMessage, err := c.unmarshaler.Unmarshal(msg)
+					formattedMessage, err := c.unmarshaler(msg)
 
 					if err != nil {
 						//TODO: can we get message errors from watermill subscriber as well?  May need to wire in differently
@@ -97,8 +97,8 @@ func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.
 	}
 
 	return newWatermillClientWithOptions(ctx, pub, sub, WatermillClientOptions{
-		Marshaler:   format,
-		Unmarshaler: format,
+		Marshaler:   format.marshal,
+		Unmarshaler: format.unmarshal,
 	})
 }
 

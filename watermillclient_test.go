@@ -30,8 +30,7 @@ func TestNewWatermillClient(t *testing.T) {
 	require.Nil(t, err, "should not return error")
 	require.NotNil(t, client, "should return initialized client")
 
-	require.Equal(t, format, client.(*watermillClient).marshaler, "should assign marshaler from format")
-	require.Same(t, format, client.(*watermillClient).unmarshaler, "should assign unmarshaler from format")
+	require.NotNil(t, client.(*watermillClient).marshaler, "should assign marshaler from format")
 }
 
 func TestNewWatermillClient_Default_EdgexJSON(t *testing.T) {
@@ -40,6 +39,5 @@ func TestNewWatermillClient_Default_EdgexJSON(t *testing.T) {
 	require.Nil(t, err, "should not return error")
 	require.NotNil(t, client, "should return initialized client")
 
-	require.IsType(t, &EdgeXJSONMessageFormat{}, client.(*watermillClient).marshaler, "should assign marshaler from format")
-	require.Same(t, &EdgeXJSONMessageFormat{}, client.(*watermillClient).unmarshaler, "should assign unmarshaler from format")
+	require.NotNil(t, client.(*watermillClient).marshaler, "should assign marshaler from format")
 }
