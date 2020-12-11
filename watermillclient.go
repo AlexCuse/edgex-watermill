@@ -61,7 +61,8 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 			sub, err := s.Subscribe(ctx, topic.Topic)
 
 			if err != nil {
-				panic(err)
+				errors <- err
+				return
 			}
 			for {
 				select {
