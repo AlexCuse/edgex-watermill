@@ -21,6 +21,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/edgexfoundry/go-mod-messaging/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/hashicorp/go-multierror"
 )
 
 type watermillClient struct {
@@ -87,9 +88,12 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 }
 
 func (c *watermillClient) Disconnect() error {
-	c.Publisher.Close()
-	c.Subscriber.Close()
-	return nil
+	var result error
+
+	result = multierror.Append(result, c.Publisher.Close())
+	result = multierror.Append(result, c.Subscriber.Close())
+
+	return result
 }
 
 func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format MessageFormat) (messaging.MessageClient, error) {
