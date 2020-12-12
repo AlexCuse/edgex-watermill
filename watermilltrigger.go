@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
 	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap"
@@ -17,7 +18,7 @@ type watermillTrigger struct {
 	message.Publisher
 	message.Subscriber
 	context            context.Context
-	appContextSeed     appsdk.ContextSeed
+	appContextSeed     appsdk.TriggerContextSeed
 	processMessageFunc appsdk.ProcessMessageFunc
 }
 
@@ -25,7 +26,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	var err error
 	logger := trigger.appContextSeed.LoggingClient
 
-	logger.Info(fmt.Sprintf("Initializing Message Bus Trigger for '%s'", trigger.appContextSeed.Configuration.MessageBus.Type))
+	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", trigger.appContextSeed.Configuration.MessageBus.Type))
 
 	logger.Info(fmt.Sprintf("Subscribing to topic: '%s' @ %s://%s:%d",
 		trigger.appContextSeed.Configuration.Binding.SubscribeTopic,
@@ -67,7 +68,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 						correlationID = uuid.New().String()
 					}
 
-					logger.Trace("Received message from bus", "topic", trigger.appContextSeed.Configuration.Binding.SubscribeTopic, clients.CorrelationHeader, correlationID)
+					logger.Trace("Received message", "topic", trigger.appContextSeed.Configuration.Binding.SubscribeTopic, clients.CorrelationHeader, correlationID)
 
 					contentType := input.Metadata.Get(EdgeXContentType)
 
@@ -95,20 +96,35 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 						ContentType:   contentType,
 					}
 
-					trigger.processMessageFunc(edgexContext, msg)
+					err := trigger.processMessageFunc(edgexContext, msg)
+
+					if err != nil {
+						input.Nack()
+						return
+					}
 
 					if edgexContext.OutputData != nil {
 						msg := message.NewMessage(edgexContext.CorrelationID, edgexContext.OutputData)
-						msg.Metadata.Set(EdgeXContentType, edgexContext.ResponseContentType)
+						msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
+						msg.Metadata.Set(EdgeXChecksum, edgexContext.EventChecksum)
+
+						if edgexContext.ResponseContentType != "" {
+							msg.Metadata.Set(EdgeXContentType, edgexContext.ResponseContentType)
+						} else {
+							msg.Metadata.Set(EdgeXContentType, contentType)
+						}
 
 						err := trigger.Publish(trigger.appContextSeed.Configuration.Binding.PublishTopic, msg)
 						if err != nil {
 							logger.Error(fmt.Sprintf("Trigger failed to publish output: %v", err))
+							input.Nack() // if it was processed but not published ack might be appropriate?
 							return
 						}
 
-						logger.Trace("Published message to bus", "topic", trigger.appContextSeed.Configuration.Binding.PublishTopic, clients.CorrelationHeader, correlationID)
+						logger.Trace("Published message to trigger output", "topic", trigger.appContextSeed.Configuration.Binding.PublishTopic, clients.CorrelationHeader, correlationID)
 					}
+
+					input.Ack()
 				}()
 				//TODO:
 				/*
@@ -128,20 +144,20 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	}()
 
 	deferred := func() {
-		logger.Info("Disconnecting from the message bus")
+		logger.Info("Disconnecting trigger")
 		err := trigger.Subscriber.Close()
 		if err != nil {
-			logger.Error("Unable to disconnect subscriber from the message bus", "error", err.Error())
+			logger.Error("Unable to disconnect trigger subscriber", "error", err.Error())
 		}
 		err = trigger.Publisher.Close()
 		if err != nil {
-			logger.Error("Unable to disconnect publisher from the message bus", "error", err.Error())
+			logger.Error("Unable to disconnect trigger publisher", "error", err.Error())
 		}
 	}
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, ctx context.Context, seed appsdk.ContextSeed, messageFunc appsdk.ProcessMessageFunc) appsdk.Trigger {
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, ctx context.Context, seed appsdk.TriggerContextSeed, messageFunc appsdk.ProcessMessageFunc) appsdk.Trigger {
 	return &watermillTrigger{
 		Publisher:          publisher,
 		Subscriber:         subscriber,

@@ -2,9 +2,8 @@ module github.com/alexcuse/edgex-watermill
 
 go 1.15
 
-replace (
-	github.com/edgexfoundry/app-functions-sdk-go => github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201211224301-c9c9efe5a898
-)
+replace github.com/edgexfoundry/app-functions-sdk-go => github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201212001952-f81c328e6690
+
 require (
 	github.com/ThreeDotsLabs/watermill v1.1.1
 	github.com/edgexfoundry/app-functions-sdk-go v1.3.0
