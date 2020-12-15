@@ -25,8 +25,8 @@ import (
 )
 
 type watermillClient struct {
-	message.Publisher
-	message.Subscriber
+	pub         message.Publisher
+	sub         message.Subscriber
 	context     context.Context
 	marshaler   WatermillMarshaler
 	unmarshaler WatermillUnmarshaler
@@ -47,7 +47,7 @@ func (c *watermillClient) Publish(env types.MessageEnvelope, topic string) error
 	if err != nil {
 		return err
 	}
-	err = c.Publisher.Publish(topic, m)
+	err = c.pub.Publish(topic, m)
 
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 					}
 				}
 			}
-		}(c.context, c.Subscriber, topic, messageErrors)
+		}(c.context, c.sub, topic, messageErrors)
 	}
 
 	return nil
@@ -90,8 +90,8 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 func (c *watermillClient) Disconnect() error {
 	var result error
 
-	result = multierror.Append(result, c.Publisher.Close())
-	result = multierror.Append(result, c.Subscriber.Close())
+	result = multierror.Append(result, c.pub.Close())
+	result = multierror.Append(result, c.sub.Close())
 
 	return result
 }
@@ -114,11 +114,11 @@ type WatermillClientOptions struct {
 
 func newWatermillClientWithOptions(ctx context.Context, pub message.Publisher, sub message.Subscriber, opt WatermillClientOptions) (messaging.MessageClient, error) {
 	client := &watermillClient{
-		pub,
-		sub,
-		ctx,
-		opt.Marshaler,
-		opt.Unmarshaler,
+		pub:         pub,
+		sub:         sub,
+		context:     ctx,
+		marshaler:   opt.Marshaler,
+		unmarshaler: opt.Unmarshaler,
 	}
 
 	return client, nil

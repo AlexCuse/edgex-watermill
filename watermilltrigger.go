@@ -15,8 +15,8 @@ import (
 )
 
 type watermillTrigger struct {
-	message.Publisher
-	message.Subscriber
+	pub                message.Publisher
+	sub                message.Subscriber
 	context            context.Context
 	appContextSeed     appsdk.TriggerContextSeed
 	processMessageFunc appsdk.ProcessMessageFunc
@@ -34,7 +34,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 		trigger.appContextSeed.Configuration.MessageBus.SubscribeHost.Host,
 		trigger.appContextSeed.Configuration.MessageBus.SubscribeHost.Port))
 
-	msgs, err := trigger.Subscriber.Subscribe(trigger.context, trigger.appContextSeed.Configuration.Binding.SubscribeTopic)
+	msgs, err := trigger.sub.Subscribe(trigger.context, trigger.appContextSeed.Configuration.Binding.SubscribeTopic)
 
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 							msg.Metadata.Set(EdgeXContentType, contentType)
 						}
 
-						err := trigger.Publish(trigger.appContextSeed.Configuration.Binding.PublishTopic, msg)
+						err := trigger.pub.Publish(trigger.appContextSeed.Configuration.Binding.PublishTopic, msg)
 						if err != nil {
 							logger.Error(fmt.Sprintf("Trigger failed to publish output: %v", err))
 							input.Nack() // if it was processed but not published ack might be appropriate?
@@ -145,11 +145,11 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 	deferred := func() {
 		logger.Info("Disconnecting trigger")
-		err := trigger.Subscriber.Close()
+		err := trigger.sub.Close()
 		if err != nil {
 			logger.Error("Unable to disconnect trigger subscriber", "error", err.Error())
 		}
-		err = trigger.Publisher.Close()
+		err = trigger.pub.Close()
 		if err != nil {
 			logger.Error("Unable to disconnect trigger publisher", "error", err.Error())
 		}
@@ -159,8 +159,8 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, ctx context.Context, seed appsdk.TriggerContextSeed, messageFunc appsdk.ProcessMessageFunc) appsdk.Trigger {
 	return &watermillTrigger{
-		Publisher:          publisher,
-		Subscriber:         subscriber,
+		pub:                publisher,
+		sub:                subscriber,
 		context:            ctx,
 		appContextSeed:     seed,
 		processMessageFunc: messageFunc,
