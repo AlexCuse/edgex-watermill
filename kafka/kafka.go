@@ -266,12 +266,14 @@ func createSubscriber(config types.MessageBusConfig) (message.Subscriber, error)
 	return kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
 }
 
-func NewKafkaTrigger(ctx context.Context, seed appsdk.ContextSeed, processor appsdk.ProcessMessageFunc) (appsdk.Trigger, error) {
+func NewKafkaTrigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, processor appsdk.TriggerMessageProcessor) (appsdk.Trigger, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
 
-	if seed.Configuration.MessageBus.PublishHost.Host != "" {
-		p, err := createPublisher(seed.Configuration.MessageBus)
+	fakeContext := contextBuilder(types.MessageEnvelope{})
+
+	if fakeContext.Configuration.MessageBus.PublishHost.Host != "" {
+		p, err := createPublisher(fakeContext.Configuration.MessageBus)
 
 		if err != nil {
 			return nil, err
@@ -280,8 +282,8 @@ func NewKafkaTrigger(ctx context.Context, seed appsdk.ContextSeed, processor app
 		pub = p
 	}
 
-	if seed.Configuration.MessageBus.SubscribeHost.Host != "" {
-		s, err := createSubscriber(seed.Configuration.MessageBus)
+	if fakeContext.Configuration.MessageBus.SubscribeHost.Host != "" {
+		s, err := createSubscriber(fakeContext.Configuration.MessageBus)
 
 		if err != nil {
 			return nil, err
@@ -294,7 +296,7 @@ func NewKafkaTrigger(ctx context.Context, seed appsdk.ContextSeed, processor app
 		pub,
 		sub,
 		ctx,
-		seed,
+		contextBuilder,
 		processor,
 	), nil
 }
