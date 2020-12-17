@@ -30,3 +30,13 @@ func (*RawInputMessageFormat) marshal(envelope types.MessageEnvelope) (*message.
 func (*RawInputMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
 	return (&RawMessageFormat{}).unmarshal(msg)
 }
+
+type RawOutputMessageFormat struct{}
+
+func (*RawOutputMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+	return (&RawMessageFormat{}).marshal(envelope)
+}
+
+func (*RawOutputMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
+	return (&EdgeXJSONMessageFormat{}).unmarshal(msg)
+}
