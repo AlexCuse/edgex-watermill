@@ -98,7 +98,7 @@ func (c *watermillClient) Disconnect() error {
 
 func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format MessageFormat) (messaging.MessageClient, error) {
 	if format == nil {
-		format = &EdgeXJSONMessageFormat{}
+		format = &EdgeXMessageFormat{}
 	}
 
 	return newWatermillClientWithOptions(ctx, pub, sub, WatermillClientOptions{

@@ -20,23 +20,24 @@ import (
 	"encoding/json"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func TestEdgeXJSONMessageFormat_Marshal(t *testing.T) {
+func TestEdgexMessageFormat_JSON_Marshal(t *testing.T) {
 	env := types.MessageEnvelope{
 		Checksum:      uuid.New().String(),
 		CorrelationID: uuid.New().String(),
-		Payload:       []byte("OK"),
-		ContentType:   uuid.New().String(),
+		Payload:       []byte(`{ "S": "OK" }`),
+		ContentType:   clients.ContentTypeJSON,
 	}
 
 	jsn, _ := json.Marshal(env)
 
-	sut := EdgeXJSONMessageFormat{}
+	sut := EdgeXMessageFormat{}
 
 	msg, err := sut.marshal(env)
 
@@ -51,7 +52,7 @@ func TestEdgeXJSONMessageFormat_Marshal(t *testing.T) {
 	require.Zero(t, msg.Metadata.Get(EdgeXChecksum), "dont use metadata for raw format")
 }
 
-func TestEdgeXJSONMessageFormat_Unmarshal(t *testing.T) {
+func TestEdgexMessageFormat_JSON_Unmarshal(t *testing.T) {
 	correlationID := uuid.New().String()
 
 	env := types.MessageEnvelope{CorrelationID: correlationID, Payload: []byte("OK")}
@@ -60,7 +61,7 @@ func TestEdgeXJSONMessageFormat_Unmarshal(t *testing.T) {
 
 	msg := message.NewMessage(uuid.New().String(), jsn)
 
-	sut := EdgeXJSONMessageFormat{}
+	sut := EdgeXMessageFormat{}
 
 	result, err := sut.unmarshal(msg)
 
@@ -72,10 +73,10 @@ func TestEdgeXJSONMessageFormat_Unmarshal(t *testing.T) {
 	require.Equal(t, correlationID, result.CorrelationID, "should read correlation ID from metadata if present")
 }
 
-func TestEdgeXJSONMessageFormat_Unmarshal_JSONError(t *testing.T) {
+func TestEdgexMessageFormat_JSON_Unmarshal_JSONError(t *testing.T) {
 	msg := message.NewMessage(uuid.New().String(), []byte("not json string"))
 
-	sut := EdgeXJSONMessageFormat{}
+	sut := EdgeXMessageFormat{}
 
 	result, err := sut.unmarshal(msg)
 
