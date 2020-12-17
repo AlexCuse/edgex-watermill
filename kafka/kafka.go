@@ -216,12 +216,12 @@ func kafkaProducerConfig(options types.MessageBusConfig) kafka.PublisherConfig {
 	}
 }
 
-func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messaging.MessageClient, error) {
+func Client(ctx context.Context, config types.MessageBusConfig) (messaging.MessageClient, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
 
 	if config.PublishHost.Host != "" {
-		p, err := createPublisher(config)
+		p, err := Publisher(config)
 
 		if err != nil {
 			return nil, err
@@ -231,7 +231,7 @@ func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messagi
 	}
 
 	if config.SubscribeHost.Host != "" {
-		s, err := createSubscriber(config)
+		s, err := Subscriber(config)
 
 		if err != nil {
 			return nil, err
@@ -258,22 +258,22 @@ func NewKafkaClient(ctx context.Context, config types.MessageBusConfig) (messagi
 	)
 }
 
-func createPublisher(config types.MessageBusConfig) (message.Publisher, error) {
+func Publisher(config types.MessageBusConfig) (message.Publisher, error) {
 	return kafka.NewPublisher(kafkaProducerConfig(config), watermill.NewCaptureLogger())
 }
 
-func createSubscriber(config types.MessageBusConfig) (message.Subscriber, error) {
+func Subscriber(config types.MessageBusConfig) (message.Subscriber, error) {
 	return kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
 }
 
-func NewKafkaTrigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, processor appsdk.TriggerMessageProcessor) (appsdk.Trigger, error) {
+func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, processor appsdk.TriggerMessageProcessor) (appsdk.Trigger, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
 
 	fakeContext := contextBuilder(types.MessageEnvelope{})
 
 	if fakeContext.Configuration.MessageBus.PublishHost.Host != "" {
-		p, err := createPublisher(fakeContext.Configuration.MessageBus)
+		p, err := Publisher(fakeContext.Configuration.MessageBus)
 
 		if err != nil {
 			return nil, err
@@ -283,7 +283,7 @@ func NewKafkaTrigger(ctx context.Context, contextBuilder appsdk.TriggerContextBu
 	}
 
 	if fakeContext.Configuration.MessageBus.SubscribeHost.Host != "" {
-		s, err := createSubscriber(fakeContext.Configuration.MessageBus)
+		s, err := Subscriber(fakeContext.Configuration.MessageBus)
 
 		if err != nil {
 			return nil, err
