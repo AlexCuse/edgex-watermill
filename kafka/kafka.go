@@ -245,9 +245,9 @@ func Client(ctx context.Context, config types.MessageBusConfig) (messaging.Messa
 	switch strings.ToLower(config.Optional["WatermillFormat"]) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
-	case "edgexjson":
+	case "edgex":
 	default:
-		fmt = &ewm.EdgeXJSONMessageFormat{}
+		fmt = &ewm.EdgeXMessageFormat{}
 	}
 
 	return ewm.NewWatermillClient(
