@@ -245,6 +245,10 @@ func Client(ctx context.Context, config types.MessageBusConfig) (messaging.Messa
 	switch strings.ToLower(config.Optional["WatermillFormat"]) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
+	case "rawinput":
+		fmt = &ewm.RawInputMessageFormat{}
+	case "rawoutput":
+		fmt = &ewm.RawOutputMessageFormat{}
 	case "edgex":
 	default:
 		fmt = &ewm.EdgeXMessageFormat{}
@@ -292,9 +296,24 @@ func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, p
 		sub = s
 	}
 
+	var fmt ewm.MessageFormat
+
+	switch strings.ToLower(fakeContext.Configuration.MessageBus.Optional["WatermillFormat"]) {
+	case "raw":
+		fmt = &ewm.RawMessageFormat{}
+	case "rawinput":
+		fmt = &ewm.RawInputMessageFormat{}
+	case "rawoutput":
+		fmt = &ewm.RawOutputMessageFormat{}
+	case "edgex":
+	default:
+		fmt = &ewm.EdgeXMessageFormat{}
+	}
+
 	return ewm.NewWatermillTrigger(
 		pub,
 		sub,
+		fmt,
 		ctx,
 		contextBuilder,
 		processor,

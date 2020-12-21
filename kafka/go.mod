@@ -8,7 +8,7 @@ require (
 	github.com/Shopify/sarama v1.27.2
 	github.com/ThreeDotsLabs/watermill v1.1.1
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0
-	github.com/alexcuse/edgex-watermill v0.0.0-20201217225147-b9460ed61e5b
+	github.com/alexcuse/edgex-watermill v0.0.0-20201221205347-d8ddb83b9ed8
 	github.com/edgexfoundry/app-functions-sdk-go v1.3.0
 	github.com/edgexfoundry/go-mod-messaging v0.1.28
 	github.com/google/uuid v1.1.2
