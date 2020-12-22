@@ -2,7 +2,7 @@ module github.com/alexcuse/edgex-watermill/kafka
 
 go 1.15
 
-replace github.com/edgexfoundry/app-functions-sdk-go => github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222160032-fdab45b7c9f1
+replace github.com/edgexfoundry/app-functions-sdk-go => github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222162257-083785a4b71c
 
 require (
 	github.com/Shopify/sarama v1.27.2

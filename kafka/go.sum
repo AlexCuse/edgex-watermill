@@ -14,8 +14,8 @@ github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0 h1:Cr6hGNWLTNj9fSobKVaMCdvgrk
 github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0/go.mod h1:eoLUMudD+n7b5HS2PXyInAK5N/NZdElbI3+2AciTE2c=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
-github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222160032-fdab45b7c9f1 h1:JBlVWY1KqIppm8AcwQiy6nN79OUBMHi4F/TlEu+G2/E=
-github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222160032-fdab45b7c9f1/go.mod h1:OLgQsRiZtlLy6emaGNKprZt15g7bVOHnDJft6qN5ehI=
+github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222162257-083785a4b71c h1:lllYLugiTuZJGMmX2whIPd08e3gdKZIOaTxJ40mtt8E=
+github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222162257-083785a4b71c/go.mod h1:OLgQsRiZtlLy6emaGNKprZt15g7bVOHnDJft6qN5ehI=
 github.com/alexcuse/edgex-watermill/core v0.0.0-20201222161157-2b007353ff83 h1:5wuZCgqZChzudpbgMK3NZpRss/HZdmZhf9QB07F+TgU=
 github.com/alexcuse/edgex-watermill/core v0.0.0-20201222161157-2b007353ff83/go.mod h1:v6R5sum7j7TVGvgaIDS4hjGEXpo9wxzAjAbkfU3i2gA=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
