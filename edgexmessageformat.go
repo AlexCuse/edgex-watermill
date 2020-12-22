@@ -19,6 +19,7 @@ package edgex_watermill
 import (
 	"encoding/json"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"github.com/fxamacker/cbor/v2"
@@ -42,7 +43,11 @@ func (*EdgeXMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Mes
 		return nil, err
 	}
 
-	return message.NewMessage(envelope.CorrelationID, pl), nil
+	msg := message.NewMessage(envelope.CorrelationID, pl)
+
+	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, envelope.CorrelationID)
+
+	return msg, nil
 }
 
 func (*EdgeXMessageFormat) unmarshal(message *message.Message) (types.MessageEnvelope, error) {

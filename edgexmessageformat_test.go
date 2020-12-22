@@ -47,9 +47,9 @@ func TestEdgexMessageFormat_JSON_Marshal(t *testing.T) {
 
 	require.Equal(t, string(jsn), string(msg.Payload), "should properly pass payload")
 	require.Equal(t, env.CorrelationID, msg.UUID, "need an ID")
-	require.Zero(t, msg.Metadata.Get(middleware.CorrelationIDMetadataKey), "dont use metadata for raw format")
-	require.Zero(t, msg.Metadata.Get(EdgeXContentType), "dont use metadata for raw format")
-	require.Zero(t, msg.Metadata.Get(EdgeXChecksum), "dont use metadata for raw format")
+	require.Equal(t, env.CorrelationID, msg.Metadata.Get(middleware.CorrelationIDMetadataKey), "keep correlation ID for middleware routing if needed")
+	require.Zero(t, msg.Metadata.Get(EdgeXContentType), "dont use metadata for edgex format")
+	require.Zero(t, msg.Metadata.Get(EdgeXChecksum), "dont use metadata for edgex format")
 }
 
 func TestEdgexMessageFormat_JSON_Unmarshal(t *testing.T) {

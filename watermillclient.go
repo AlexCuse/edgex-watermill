@@ -33,8 +33,8 @@ type watermillClient struct {
 }
 
 const (
-	EdgeXContentType = "edgex-content-type"
-	EdgeXChecksum    = "edgex-checksum"
+	EdgeXContentType = "edgex_content_type"
+	EdgeXChecksum    = "edgex_checksum"
 )
 
 func (c *watermillClient) Connect() error {
