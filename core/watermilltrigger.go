@@ -17,17 +17,13 @@ type watermillTrigger struct {
 	marshaler        WatermillMarshaler
 	unmarshaler      WatermillUnmarshaler
 	context          context.Context
-	contextBuilder   appsdk.TriggerContextBuilder
-	messageProcessor appsdk.TriggerMessageProcessor
+	cancel           context.CancelFunc
+	sdkTriggerConfig appsdk.TriggerConfig
 }
 
 func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan types.MessageEnvelope) (bootstrap.Deferred, error) {
-	var err error
-	//TODO: put sdk logger on trigger/client, figure out how to adapt watermill logger
-	fakeContext := trigger.contextBuilder(types.MessageEnvelope{})
-	cfg := fakeContext.Configuration
-
-	logger := fakeContext.LoggingClient
+	logger := trigger.sdkTriggerConfig.Logger
+	cfg := trigger.sdkTriggerConfig.Config
 
 	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.MessageBus.Type))
 
@@ -73,11 +69,11 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 						return
 					}
 
-					edgexContext := trigger.contextBuilder(msg)
+					edgexContext := trigger.sdkTriggerConfig.ContextBuilder(msg)
 
 					logger.Trace("Received message", "topic", edgexContext.Configuration.Binding.SubscribeTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
 
-					err = trigger.messageProcessor(edgexContext, msg)
+					err = trigger.sdkTriggerConfig.MessageProcessor(edgexContext, msg)
 
 					if err != nil {
 						logger.Error(fmt.Sprintf("Failed to process message: %s", err.Error()))
@@ -142,14 +138,21 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, ctx context.Context, contextFunc appsdk.TriggerContextBuilder, messageFunc appsdk.TriggerMessageProcessor) appsdk.Trigger {
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, ctx context.Context, tc appsdk.TriggerConfig) appsdk.Trigger {
+	ctx, cancel := context.WithCancel(ctx)
 	return &watermillTrigger{
 		pub:              publisher,
 		sub:              subscriber,
 		context:          ctx,
-		contextBuilder:   contextFunc,
-		messageProcessor: messageFunc,
+		cancel:           cancel,
+		sdkTriggerConfig: tc,
 		marshaler:        format.marshal,
 		unmarshaler:      format.unmarshal,
+	}
+}
+
+func (trigger *watermillTrigger) Stop() {
+	if trigger.cancel != nil {
+		trigger.cancel()
 	}
 }
