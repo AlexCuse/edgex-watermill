@@ -26,9 +26,11 @@ import (
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
 	"github.com/edgexfoundry/go-mod-messaging/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 )
 
 func kafkaConsumerConfig(options types.MessageBusConfig) kafka.SubscriberConfig {
@@ -318,4 +320,17 @@ func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, p
 		contextBuilder,
 		processor,
 	), nil
+}
+
+func Register(sdk *appsdk.AppFunctionsSDK) {
+	sdk.RegisterCustomTrigger("kafka-watermill", func(tcb appsdk.TriggerContextBuilder, tmp appsdk.TriggerMessageProcessor) (appsdk.Trigger, error) {
+		rs := reflect.ValueOf(sdk).Elem()
+		rf := rs.FieldByName("appCtx")
+		// rf can't be read or set.
+		rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
+		// Now rf can be read (and set, for the love of god don't)
+		ctx := rf.Interface().(context.Context)
+
+		return Trigger(ctx, tcb, tmp)
+	})
 }
