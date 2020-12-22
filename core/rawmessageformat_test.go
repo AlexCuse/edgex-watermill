@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-package edgex_watermill
+package core
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"

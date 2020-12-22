@@ -14,18 +14,29 @@
 // limitations under the License.
 //
 
-package edgex_watermill
+package core
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 )
 
-type MessageFormat interface {
-	marshal(envelope types.MessageEnvelope) (*message.Message, error)
-	unmarshal(*message.Message) (types.MessageEnvelope, error)
+type RawInputMessageFormat struct{}
+
+func (*RawInputMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+	return (&EdgeXMessageFormat{}).marshal(envelope)
 }
 
-type WatermillMarshaler func(envelope types.MessageEnvelope) (*message.Message, error)
+func (*RawInputMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
+	return (&RawMessageFormat{}).unmarshal(msg)
+}
 
-type WatermillUnmarshaler func(*message.Message) (types.MessageEnvelope, error)
+type RawOutputMessageFormat struct{}
+
+func (*RawOutputMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+	return (&RawMessageFormat{}).marshal(envelope)
+}
+
+func (*RawOutputMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
+	return (&EdgeXMessageFormat{}).unmarshal(msg)
+}

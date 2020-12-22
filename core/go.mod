@@ -1,4 +1,4 @@
-module github.com/alexcuse/edgex-watermill
+module github.com/alexcuse/edgex-watermill/core
 
 go 1.15
 

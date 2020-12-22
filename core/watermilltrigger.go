@@ -1,4 +1,4 @@
-package edgex_watermill
+package core
 
 import (
 	"context"
