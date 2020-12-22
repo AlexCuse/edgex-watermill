@@ -272,14 +272,12 @@ func Subscriber(config types.MessageBusConfig) (message.Subscriber, error) {
 	return kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
 }
 
-func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, processor appsdk.TriggerMessageProcessor) (appsdk.Trigger, error) {
+func Trigger(ctx context.Context, tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
 
-	fakeContext := contextBuilder(types.MessageEnvelope{})
-
-	if fakeContext.Configuration.MessageBus.PublishHost.Host != "" {
-		p, err := Publisher(fakeContext.Configuration.MessageBus)
+	if tc.Config.MessageBus.PublishHost.Host != "" {
+		p, err := Publisher(tc.Config.MessageBus)
 
 		if err != nil {
 			return nil, err
@@ -288,8 +286,8 @@ func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, p
 		pub = p
 	}
 
-	if fakeContext.Configuration.MessageBus.SubscribeHost.Host != "" {
-		s, err := Subscriber(fakeContext.Configuration.MessageBus)
+	if tc.Config.MessageBus.SubscribeHost.Host != "" {
+		s, err := Subscriber(tc.Config.MessageBus)
 
 		if err != nil {
 			return nil, err
@@ -300,7 +298,7 @@ func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, p
 
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(fakeContext.Configuration.MessageBus.Optional["WatermillFormat"]) {
+	switch strings.ToLower(tc.Config.MessageBus.Optional["WatermillFormat"]) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -317,13 +315,12 @@ func Trigger(ctx context.Context, contextBuilder appsdk.TriggerContextBuilder, p
 		sub,
 		fmt,
 		ctx,
-		contextBuilder,
-		processor,
+		tc,
 	), nil
 }
 
 func Register(sdk *appsdk.AppFunctionsSDK) {
-	sdk.RegisterCustomTrigger("kafka-watermill", func(tcb appsdk.TriggerContextBuilder, tmp appsdk.TriggerMessageProcessor) (appsdk.Trigger, error) {
+	sdk.RegisterCustomTrigger("kafka-watermill", func(cfg appsdk.TriggerConfig) (appsdk.Trigger, error) {
 		rs := reflect.ValueOf(sdk).Elem()
 		rf := rs.FieldByName("appCtx")
 		// rf can't be read or set.
@@ -331,6 +328,6 @@ func Register(sdk *appsdk.AppFunctionsSDK) {
 		// Now rf can be read (and set, for the love of god don't)
 		ctx := rf.Interface().(context.Context)
 
-		return Trigger(ctx, tcb, tmp)
+		return Trigger(ctx, cfg)
 	})
 }
