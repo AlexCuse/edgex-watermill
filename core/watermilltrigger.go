@@ -107,19 +107,26 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 					input.Ack()
 				}()
-				//TODO:
-				/*
-					case bg := <-background:
-						go func() {
-							err := trigger.Publish(bg, trigger.configuration.Binding.PublishTopic)
-							if err != nil {
-								logger.Error(fmt.Sprintf("Failed to publish background Message to bus, %v", err))
-								return
-							}
 
-							logger.Trace("Published background message to bus", "topic", trigger.Configuration.Binding.PublishTopic, clients.CorrelationHeader, bg.CorrelationID)
-						}()
-				*/
+			case bg := <-background:
+				go func() {
+					msg, err := trigger.marshaler(bg)
+
+					if err != nil {
+						logger.Error(fmt.Sprintf("Failed to marshal background message, %s", err.Error()))
+						return
+					}
+
+					err = trigger.pub.Publish(trigger.sdkTriggerConfig.Config.Binding.PublishTopic, msg)
+
+					if err != nil {
+						logger.Error(fmt.Sprintf("Failed to publish background Message to bus, %s", err.Error()))
+						return
+					}
+
+					logger.Trace("Published background message to bus", "topic", trigger.sdkTriggerConfig.Config.Binding.PublishTopic, clients.CorrelationHeader, bg.CorrelationID)
+				}()
+
 			}
 		}
 	}()
