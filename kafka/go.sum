@@ -22,6 +22,9 @@ github.com/alexcuse/edgex-watermill v0.0.0-20201217225147-b9460ed61e5b h1:2CuHBC
 github.com/alexcuse/edgex-watermill v0.0.0-20201217225147-b9460ed61e5b/go.mod h1:4cgy0WHW0fgst+a0YvzGYnUThJiqTCKHSrvhox33uSg=
 github.com/alexcuse/edgex-watermill v0.0.0-20201221205347-d8ddb83b9ed8 h1:YZBQEfoDyGdeqiLMRhWPKk4Co54g+XMTWpEL8xyQG5A=
 github.com/alexcuse/edgex-watermill v0.0.0-20201221205347-d8ddb83b9ed8/go.mod h1:4cgy0WHW0fgst+a0YvzGYnUThJiqTCKHSrvhox33uSg=
+github.com/alexcuse/edgex-watermill v0.0.0-20201222144406-76085060ab80 h1:HrzJqxPobkTz8kwm9yOjntxkahUc39WeJJ8om9MVWOo=
+github.com/alexcuse/edgex-watermill/core v0.0.0-20201222144406-76085060ab80 h1:NRPdhGSSMlt2DDItOREsg8ECyBxvSAKeOMaM5co+jqI=
+github.com/alexcuse/edgex-watermill/core v0.0.0-20201222144406-76085060ab80/go.mod h1:8H44YCo+m+6Q4++83yXaLDTdI/SuRQoUNhZa5IKTe/M=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da h1:8GUt8eRujhVEGZFFEjBj46YV4rDjvGrNxb0KMWYkL2I=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
