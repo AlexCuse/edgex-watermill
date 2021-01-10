@@ -25,33 +25,6 @@ import (
 	"testing"
 )
 
-type mockPublisher struct {
-	calls []struct {
-		topic   string
-		payload []*message.Message
-	}
-	closed bool
-}
-
-func (mp *mockPublisher) Publish(topic string, messages ...*message.Message) error {
-	mp.calls = append(mp.calls, struct {
-		topic   string
-		payload []*message.Message
-	}{topic, messages})
-
-	return nil
-}
-
-func (mp *mockPublisher) Close() error { return nil }
-
-type mockMarshaler struct {
-	marshaled *message.Message
-}
-
-func (m *mockMarshaler) Marshal(envelope types.MessageEnvelope) (*message.Message, error) {
-	return m.marshaled, nil
-}
-
 func TestPublish(t *testing.T) {
 	topic := uuid.New().String()
 	payload := types.MessageEnvelope{}

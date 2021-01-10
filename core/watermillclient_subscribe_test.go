@@ -26,29 +26,6 @@ import (
 	"time"
 )
 
-type mockSubscriber struct {
-	calls []struct {
-		topic   string
-		payload []*message.Message
-	}
-	closed              bool
-	subscriptionChannel chan *message.Message
-}
-
-func (mp *mockSubscriber) Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error) {
-	return mp.subscriptionChannel, nil
-}
-
-func (mp *mockSubscriber) Close() error { return nil }
-
-type mockUnmarshaler struct {
-	unmarshaled types.MessageEnvelope
-}
-
-func (m *mockUnmarshaler) Unmarshal(message *message.Message) (types.MessageEnvelope, error) {
-	return m.unmarshaled, nil
-}
-
 func TestSubscribe(t *testing.T) {
 	msgs := make(chan *message.Message, 1)
 	env := types.MessageEnvelope{}

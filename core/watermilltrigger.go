@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
 	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"sync"
 )
@@ -19,6 +21,77 @@ type watermillTrigger struct {
 	context          context.Context
 	cancel           context.CancelFunc
 	sdkTriggerConfig appsdk.TriggerConfig
+}
+
+func (trigger *watermillTrigger) input(watermillMessage *message.Message, logger logger.LoggingClient) {
+	msg, err := trigger.unmarshaler(watermillMessage)
+
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to unmarshal message: %s", err.Error()))
+		watermillMessage.Nack()
+		return
+	}
+
+	edgexContext := trigger.sdkTriggerConfig.ContextBuilder(msg)
+
+	logger.Trace("Received message", "topic", edgexContext.Configuration.Binding.SubscribeTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
+
+	err = trigger.sdkTriggerConfig.MessageProcessor(edgexContext, msg)
+
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to process message: %s", err.Error()))
+		watermillMessage.Nack()
+		return
+	}
+
+	err = trigger.output(trigger.sdkTriggerConfig.Config.Binding.PublishTopic, edgexContext)
+
+	if err != nil {
+		logger.Error(fmt.Sprintf("Trigger failed to publish output: %v", err))
+		watermillMessage.Nack() // if it was processed but not published ack might be appropriate?
+		return
+	}
+
+	watermillMessage.Ack()
+}
+
+func (trigger *watermillTrigger) output(publishTopic string, ctx *appcontext.Context) error {
+	if ctx.OutputData != nil && trigger.pub != nil {
+		msg, err := trigger.marshaler(types.MessageEnvelope{
+			CorrelationID: ctx.CorrelationID,
+			Payload:       ctx.OutputData,
+			ContentType:   ctx.ResponseContentType,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		err = trigger.pub.Publish(publishTopic, msg)
+
+		if err != nil {
+			return err
+		}
+
+		ctx.LoggingClient.Trace("Published message to trigger output", "topic", publishTopic, clients.CorrelationHeader, ctx.CorrelationID)
+	}
+	return nil
+}
+
+func (trigger *watermillTrigger) background(publishTopic string, bg types.MessageEnvelope) error {
+	msg, err := trigger.marshaler(bg)
+
+	if err != nil {
+		return err
+	}
+
+	err = trigger.pub.Publish(publishTopic, msg)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan types.MessageEnvelope) (bootstrap.Deferred, error) {
@@ -61,70 +134,12 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 			case input := <-msgs:
 				go func() {
-					msg, err := trigger.unmarshaler(input)
-
-					if err != nil {
-						logger.Error(fmt.Sprintf("Failed to unmarshal message: %s", err.Error()))
-						input.Nack()
-						return
-					}
-
-					edgexContext := trigger.sdkTriggerConfig.ContextBuilder(msg)
-
-					logger.Trace("Received message", "topic", edgexContext.Configuration.Binding.SubscribeTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
-
-					err = trigger.sdkTriggerConfig.MessageProcessor(edgexContext, msg)
-
-					if err != nil {
-						logger.Error(fmt.Sprintf("Failed to process message: %s", err.Error()))
-						input.Nack()
-						return
-					}
-
-					if edgexContext.OutputData != nil {
-						msg, err := trigger.marshaler(types.MessageEnvelope{
-							CorrelationID: edgexContext.CorrelationID,
-							Payload:       edgexContext.OutputData,
-							ContentType:   edgexContext.ResponseContentType,
-						})
-
-						if err != nil {
-							logger.Error(fmt.Sprintf("Trigger failed to prepare output for publish: %v", err))
-							input.Nack() // if it was processed but not published ack might be appropriate?
-							return
-						}
-
-						err = trigger.pub.Publish(edgexContext.Configuration.Binding.PublishTopic, msg)
-
-						if err != nil {
-							logger.Error(fmt.Sprintf("Trigger failed to publish output: %v", err))
-							input.Nack() // if it was processed but not published ack might be appropriate?
-							return
-						}
-
-						logger.Trace("Published message to trigger output", "topic", edgexContext.Configuration.Binding.PublishTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
-					}
-
-					input.Ack()
+					trigger.input(input, logger)
 				}()
 
 			case bg := <-background:
 				go func() {
-					msg, err := trigger.marshaler(bg)
-
-					if err != nil {
-						logger.Error(fmt.Sprintf("Failed to marshal background message, %s", err.Error()))
-						return
-					}
-
-					err = trigger.pub.Publish(trigger.sdkTriggerConfig.Config.Binding.PublishTopic, msg)
-
-					if err != nil {
-						logger.Error(fmt.Sprintf("Failed to publish background Message to bus, %s", err.Error()))
-						return
-					}
-
-					logger.Trace("Published background message to bus", "topic", trigger.sdkTriggerConfig.Config.Binding.PublishTopic, clients.CorrelationHeader, bg.CorrelationID)
+					trigger.background(trigger.sdkTriggerConfig.Config.Binding.PublishTopic, bg)
 				}()
 
 			}
@@ -133,13 +148,18 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 	deferred := func() {
 		logger.Info("Disconnecting trigger")
-		err := trigger.sub.Close()
-		if err != nil {
-			logger.Error("Unable to disconnect trigger subscriber", "error", err.Error())
+		if trigger.sub != nil {
+			err := trigger.sub.Close()
+			if err != nil {
+				logger.Error("Unable to disconnect trigger subscriber", "error", err.Error())
+			}
 		}
-		err = trigger.pub.Close()
-		if err != nil {
-			logger.Error("Unable to disconnect trigger publisher", "error", err.Error())
+
+		if trigger.pub != nil {
+			err = trigger.pub.Close()
+			if err != nil {
+				logger.Error("Unable to disconnect trigger publisher", "error", err.Error())
+			}
 		}
 	}
 	return deferred, nil
