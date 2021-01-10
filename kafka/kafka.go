@@ -320,7 +320,7 @@ func Trigger(ctx context.Context, tc appsdk.TriggerConfig) (appsdk.Trigger, erro
 }
 
 func Register(sdk *appsdk.AppFunctionsSDK) {
-	sdk.RegisterCustomTrigger("kafka-watermill", func(cfg appsdk.TriggerConfig) (appsdk.Trigger, error) {
+	sdk.RegisterCustomTriggerFactory("kafka-watermill", func(cfg appsdk.TriggerConfig) (appsdk.Trigger, error) {
 		rs := reflect.ValueOf(sdk).Elem()
 		rf := rs.FieldByName("appCtx")
 		// rf can't be read or set.
