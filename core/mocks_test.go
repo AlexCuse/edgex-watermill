@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 )
 
@@ -63,7 +64,20 @@ func (m *mockUnmarshaler) Unmarshal(message *message.Message) (types.MessageEnve
 	return m.unmarshaled, nil
 }
 
-// Message
-type mockMessage struct {
-	m message.Message
+// Message Processor
+type mockMessageProcessor struct {
+	lastCall struct {
+		ctx *appcontext.Context
+		env types.MessageEnvelope
+	}
+	err error
+}
+
+func (mp *mockMessageProcessor) process(ctx *appcontext.Context, env types.MessageEnvelope) error {
+	mp.lastCall = struct {
+		ctx *appcontext.Context
+		env types.MessageEnvelope
+	}{ctx: ctx, env: env}
+
+	return mp.err
 }

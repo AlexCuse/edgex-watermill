@@ -6,10 +6,11 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/app-functions-sdk-go/appsdk"
+	"github.com/edgexfoundry/app-functions-sdk-go/pkg/util"
 	"github.com/edgexfoundry/go-mod-bootstrap/bootstrap"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients"
-	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"strings"
 	"sync"
 )
 
@@ -18,12 +19,15 @@ type watermillTrigger struct {
 	sub              message.Subscriber
 	marshaler        WatermillMarshaler
 	unmarshaler      WatermillUnmarshaler
+	topics           []string
 	context          context.Context
 	cancel           context.CancelFunc
 	sdkTriggerConfig appsdk.TriggerConfig
 }
 
-func (trigger *watermillTrigger) input(watermillMessage *message.Message, logger logger.LoggingClient) {
+func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string, publishTopic string) {
+	logger := trigger.sdkTriggerConfig.Logger
+
 	msg, err := trigger.unmarshaler(watermillMessage)
 
 	if err != nil {
@@ -34,7 +38,7 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, logger
 
 	edgexContext := trigger.sdkTriggerConfig.ContextBuilder(msg)
 
-	logger.Trace("Received message", "topic", edgexContext.Configuration.Binding.SubscribeTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
+	logger.Trace("Received message", "topic", receiveTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
 
 	err = trigger.sdkTriggerConfig.MessageProcessor(edgexContext, msg)
 
@@ -44,7 +48,7 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, logger
 		return
 	}
 
-	err = trigger.output(trigger.sdkTriggerConfig.Config.Binding.PublishTopic, edgexContext)
+	err = trigger.output(publishTopic, edgexContext)
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("Trigger failed to publish output: %v", err))
@@ -101,18 +105,44 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.MessageBus.Type))
 
 	logger.Info(fmt.Sprintf("Subscribing to topic: '%s' @ %s://%s:%d",
-		cfg.Binding.SubscribeTopic,
+		cfg.Binding.SubscribeTopics,
 		cfg.MessageBus.SubscribeHost.Protocol,
 		cfg.MessageBus.SubscribeHost.Host,
 		cfg.MessageBus.SubscribeHost.Port))
 
-	msgs, err := trigger.sub.Subscribe(trigger.context, cfg.Binding.SubscribeTopic)
-
-	if err != nil {
-		return nil, err
+	if len(strings.TrimSpace(trigger.sdkTriggerConfig.Config.Binding.SubscribeTopics)) == 0 {
+		// Still allows subscribing to blank topic to receive all messages
+		trigger.topics = append(trigger.topics, trigger.sdkTriggerConfig.Config.Binding.SubscribeTopics)
+	} else {
+		topics := util.DeleteEmptyAndTrim(strings.FieldsFunc(trigger.sdkTriggerConfig.Config.Binding.SubscribeTopics, util.SplitComma))
+		for _, topic := range topics {
+			trigger.topics = append(trigger.topics, topic)
+		}
 	}
 
-	receiveMessage := true
+	for _, topic := range trigger.topics {
+		tributary, err := trigger.sub.Subscribe(trigger.context, topic)
+
+		if err != nil {
+			return nil, err
+		}
+
+		wg.Add(1)
+
+		go func(collectFrom <-chan *message.Message, t string) {
+			defer wg.Done()
+			select {
+			case <-trigger.context.Done():
+				return
+
+			case m := <-collectFrom:
+				go func() {
+					trigger.input(m, t, trigger.sdkTriggerConfig.Config.Binding.PublishTopic)
+				}()
+
+			}
+		}(tributary, topic)
+	}
 
 	if len(cfg.MessageBus.PublishHost.Host) > 0 {
 		logger.Info(fmt.Sprintf("Publishing to topic: '%s' @ %s://%s:%d",
@@ -127,15 +157,10 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	go func() {
 		defer wg.Done()
 
-		for receiveMessage {
+		for {
 			select {
 			case <-trigger.context.Done():
 				return
-
-			case input := <-msgs:
-				go func() {
-					trigger.input(input, logger)
-				}()
 
 			case bg := <-background:
 				go func() {
@@ -156,12 +181,13 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 		}
 
 		if trigger.pub != nil {
-			err = trigger.pub.Close()
+			err := trigger.pub.Close()
 			if err != nil {
 				logger.Error("Unable to disconnect trigger publisher", "error", err.Error())
 			}
 		}
 	}
+
 	return deferred, nil
 }
 
