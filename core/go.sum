@@ -8,6 +8,7 @@ github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuy
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222162257-083785a4b71c h1:lllYLugiTuZJGMmX2whIPd08e3gdKZIOaTxJ40mtt8E=
 github.com/alexcuse/app-functions-sdk-go v1.3.1-dev.5.0.20201222162257-083785a4b71c/go.mod h1:OLgQsRiZtlLy6emaGNKprZt15g7bVOHnDJft6qN5ehI=
+github.com/alexcuse/edgex-watermill v0.0.0-20210112114620-6a6c42ad809f h1:mDwS5SuSG+gr0HJyPZigq3GQgcUs+f5TY5uc+4PoJhM=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da h1:8GUt8eRujhVEGZFFEjBj46YV4rDjvGrNxb0KMWYkL2I=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=

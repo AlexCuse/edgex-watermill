@@ -73,7 +73,7 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 					formattedMessage, err := c.unmarshaler(msg)
 
 					if err != nil {
-						//TODO: can we get message errors from watermill subscriber as well?  May need to wire in differently
+						//TODO: can we get message errors from watermill Subscriber as well?  May need to wire in differently
 						errors <- err
 					} else {
 						topic.Messages <- formattedMessage

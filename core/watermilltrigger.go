@@ -129,8 +129,8 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 		wg.Add(1)
 
-		go func(collectFrom <-chan *message.Message, t string) {
-			defer wg.Done()
+		go func(waitgroup *sync.WaitGroup, collectFrom <-chan *message.Message, t string) {
+			defer waitgroup.Done()
 			select {
 			case <-trigger.context.Done():
 				return
@@ -141,7 +141,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 				}()
 
 			}
-		}(tributary, topic)
+		}(wg, tributary, topic)
 	}
 
 	if len(cfg.MessageBus.PublishHost.Host) > 0 {
@@ -176,14 +176,14 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 		if trigger.sub != nil {
 			err := trigger.sub.Close()
 			if err != nil {
-				logger.Error("Unable to disconnect trigger subscriber", "error", err.Error())
+				logger.Error("Unable to disconnect trigger Subscriber", "error", err.Error())
 			}
 		}
 
 		if trigger.pub != nil {
 			err := trigger.pub.Close()
 			if err != nil {
-				logger.Error("Unable to disconnect trigger publisher", "error", err.Error())
+				logger.Error("Unable to disconnect trigger Publisher", "error", err.Error())
 			}
 		}
 	}

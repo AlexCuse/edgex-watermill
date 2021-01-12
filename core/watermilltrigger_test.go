@@ -1,12 +1,14 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/edgexfoundry/app-functions-sdk-go/appcontext"
 	"github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -39,18 +41,19 @@ func TestOutput_MarshalError(t *testing.T) {
 		ResponseContentType: uuid.New().String(),
 	}
 
-	pub := mockPublisher{}
+	msg := message.NewMessage("", []byte{})
 
-	marshaler := mockMarshaler{
-		err: errors.New("mocked error"),
-	}
+	marshaler := mockMarshaler{}
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Marshal}
+	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
+		return ctx.CorrelationID == envelope.CorrelationID && ctx.ResponseContentType == envelope.ContentType && bytes.Equal(ctx.OutputData, envelope.Payload)
+	})).Return(msg, errors.New(""))
+
+	sut := watermillTrigger{marshaler: marshaler.Execute, pub: &mockPublisher{}}
 
 	err := sut.output(topic, &ctx)
 
 	require.Error(t, err)
-	require.Equal(t, marshaler.err, err)
 }
 
 func TestOutput_PublishError(t *testing.T) {
@@ -63,24 +66,22 @@ func TestOutput_PublishError(t *testing.T) {
 		ResponseContentType: uuid.New().String(),
 	}
 
-	pub := mockPublisher{
-		err: errors.New("mocked error"),
-	}
+	msg := message.NewMessage(ctx.CorrelationID, ctx.OutputData)
 
 	marshaler := mockMarshaler{}
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Marshal}
+	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
+		return ctx.CorrelationID == envelope.CorrelationID && ctx.ResponseContentType == envelope.ContentType && bytes.Equal(ctx.OutputData, envelope.Payload)
+	})).Return(msg, nil)
+
+	pub := mockPublisher{}
+	pub.On("Publish", topic, msg).Return(errors.New(""))
+
+	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
 	err := sut.output(topic, &ctx)
 
 	require.Error(t, err)
-	require.Equal(t, pub.err, err)
-
-	require.NotNil(t, marshaler.lastCall)
-
-	require.Equal(t, ctx.CorrelationID, marshaler.lastCall.CorrelationID)
-	require.Equal(t, ctx.OutputData, marshaler.lastCall.Payload)
-	require.Equal(t, ctx.ResponseContentType, marshaler.lastCall.ContentType)
 }
 
 func TestOutput(t *testing.T) {
@@ -93,30 +94,32 @@ func TestOutput(t *testing.T) {
 		ResponseContentType: uuid.New().String(),
 	}
 
+	marshaled := message.Message{}
+
 	pub := mockPublisher{}
+	pub.On("Publish", topic, &marshaled).Return(nil)
 
-	marshaler := mockMarshaler{
-		marshaled: &message.Message{},
-	}
+	marshaler := mockMarshaler{}
+	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
+		return ctx.CorrelationID == envelope.CorrelationID && ctx.ResponseContentType == envelope.ContentType && bytes.Equal(ctx.OutputData, envelope.Payload)
+	})).Return(&marshaled, nil)
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Marshal}
+	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
 	err := sut.output(topic, &ctx)
 
 	require.NoError(t, err)
 
-	require.NotNil(t, marshaler.lastCall)
+	require.Equal(t, 1, len(marshaler.Calls))
+	require.Equal(t, ctx.CorrelationID, marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).CorrelationID)
+	require.Equal(t, ctx.OutputData, marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).Payload)
+	require.Equal(t, ctx.ResponseContentType, marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).ContentType)
 
-	require.Equal(t, ctx.CorrelationID, marshaler.lastCall.CorrelationID)
-	require.Equal(t, ctx.OutputData, marshaler.lastCall.Payload)
-	require.Equal(t, ctx.ResponseContentType, marshaler.lastCall.ContentType)
-
-	require.Equal(t, 1, len(pub.calls))
-	require.Equal(t, topic, pub.calls[0].topic)
-
-	require.Equal(t, 1, len(pub.calls[0].payload))
-	msg := pub.calls[0].payload[0]
-	require.Equal(t, msg, marshaler.marshaled)
+	require.Equal(t, 1, len(pub.Calls))
+	require.Equal(t, topic, pub.Calls[0].Arguments[0])
+	msg, ok := pub.Calls[0].Arguments[1].(*message.Message)
+	require.True(t, ok)
+	require.Equal(t, &marshaled, msg)
 }
 
 func TestBackground_MarshalError(t *testing.T) {
@@ -128,18 +131,15 @@ func TestBackground_MarshalError(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
-	pub := mockPublisher{}
+	marshaler := mockMarshaler{}
 
-	marshaler := mockMarshaler{
-		err: errors.New("mocked error"),
-	}
+	marshaler.On("Execute", env).Return(nil, errors.New(""))
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Marshal}
+	sut := watermillTrigger{marshaler: marshaler.Execute}
 
 	err := sut.background(topic, env)
 
 	require.Error(t, err)
-	require.Equal(t, marshaler.err, err)
 }
 
 func TestBackground_PublishError(t *testing.T) {
@@ -151,22 +151,20 @@ func TestBackground_PublishError(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
-	pub := mockPublisher{
-		err: errors.New("mocked error"),
-	}
+	msg := message.NewMessage(env.CorrelationID, env.Payload)
 
 	marshaler := mockMarshaler{}
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Marshal}
+	marshaler.On("Execute", env).Return(msg, nil)
+
+	pub := mockPublisher{}
+	pub.On("Publish", topic, msg).Return(errors.New(""))
+
+	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
 	err := sut.background(topic, env)
 
 	require.Error(t, err)
-	require.Equal(t, pub.err, err)
-
-	require.NotNil(t, marshaler.lastCall)
-
-	require.Equal(t, env, *marshaler.lastCall)
 }
 
 func TestBackground(t *testing.T) {
@@ -178,26 +176,23 @@ func TestBackground(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
+	marshaled := message.Message{}
+
 	pub := mockPublisher{}
+	pub.On("Publish", topic, &marshaled).Return(nil)
 
-	marshaler := mockMarshaler{
-		marshaled: &message.Message{},
-	}
+	marshaler := mockMarshaler{}
+	marshaler.On("Execute", env).Return(&marshaled, nil)
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Marshal}
+	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
 	err := sut.background(topic, env)
 
 	require.NoError(t, err)
 
-	require.NotNil(t, marshaler.lastCall)
-
-	require.Equal(t, env, *marshaler.lastCall)
-
-	require.Equal(t, 1, len(pub.calls))
-	require.Equal(t, topic, pub.calls[0].topic)
-
-	require.Equal(t, 1, len(pub.calls[0].payload))
-	msg := pub.calls[0].payload[0]
-	require.Equal(t, msg, marshaler.marshaled)
+	require.Equal(t, 1, len(pub.Calls))
+	require.Equal(t, topic, pub.Calls[0].Arguments[0])
+	msg, ok := pub.Calls[0].Arguments[1].(*message.Message)
+	require.True(t, ok)
+	require.Equal(t, &marshaled, msg)
 }
