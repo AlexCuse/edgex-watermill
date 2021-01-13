@@ -131,15 +131,17 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 		go func(waitgroup *sync.WaitGroup, collectFrom <-chan *message.Message, t string) {
 			defer waitgroup.Done()
-			select {
-			case <-trigger.context.Done():
-				return
+			for {
+				select {
+				case <-trigger.context.Done():
+					return
 
-			case m := <-collectFrom:
-				go func() {
-					trigger.input(m, t, trigger.sdkTriggerConfig.Config.Binding.PublishTopic)
-				}()
+				case m := <-collectFrom:
+					go func() {
+						trigger.input(m, t, trigger.sdkTriggerConfig.Config.Binding.PublishTopic)
+					}()
 
+				}
 			}
 		}(wg, tributary, topic)
 	}
