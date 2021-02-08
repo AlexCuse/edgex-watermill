@@ -6,9 +6,9 @@ require (
 	github.com/Shopify/sarama v1.27.2
 	github.com/ThreeDotsLabs/watermill v1.1.1
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0
-	github.com/alexcuse/edgex-watermill/core v0.0.0-20210113195658-35d3c8cee1f5
-	github.com/edgexfoundry/app-functions-sdk-go v1.3.1-dev.17
-	github.com/edgexfoundry/go-mod-messaging v0.1.30
-	github.com/google/uuid v1.1.4
-	github.com/stretchr/testify v1.6.1
+	github.com/alexcuse/edgex-watermill/core v0.0.0-20210208164506-da611eca034e
+	github.com/edgexfoundry/app-functions-sdk-go/v2 v2.0.0-dev.9
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0
+	github.com/google/uuid v1.2.0
+	github.com/stretchr/testify v1.7.0
 )
