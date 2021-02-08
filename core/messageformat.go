@@ -18,7 +18,7 @@ package core
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 )
 
 type MessageFormat interface {

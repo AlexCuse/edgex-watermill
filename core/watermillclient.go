@@ -19,8 +19,8 @@ package core
 import (
 	"context"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/go-mod-messaging/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/hashicorp/go-multierror"
 )
 
