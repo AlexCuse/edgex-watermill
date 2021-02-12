@@ -26,11 +26,9 @@ import (
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/appsdk"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
-	"unsafe"
 )
 
 func kafkaConsumerConfig(options types.MessageBusConfig) kafka.SubscriberConfig {
@@ -272,7 +270,7 @@ func Subscriber(config types.MessageBusConfig) (message.Subscriber, error) {
 	return kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
 }
 
-func Trigger(ctx context.Context, tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
+func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
 
@@ -314,20 +312,10 @@ func Trigger(ctx context.Context, tc appsdk.TriggerConfig) (appsdk.Trigger, erro
 		pub,
 		sub,
 		fmt,
-		ctx,
 		tc,
 	), nil
 }
 
 func Register(sdk *appsdk.AppFunctionsSDK) {
-	sdk.RegisterCustomTriggerFactory("kafka-watermill", func(cfg appsdk.TriggerConfig) (appsdk.Trigger, error) {
-		rs := reflect.ValueOf(sdk).Elem()
-		rf := rs.FieldByName("appCtx")
-		// rf can't be read or set.
-		rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
-		// Now rf can be read (and set, for the love of god don't)
-		ctx := rf.Interface().(context.Context)
-
-		return Trigger(ctx, cfg)
-	})
+	sdk.RegisterCustomTriggerFactory("kafka-watermill", Trigger)
 }
