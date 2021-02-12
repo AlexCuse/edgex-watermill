@@ -102,6 +102,8 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	logger := trigger.sdkTriggerConfig.Logger
 	cfg := trigger.sdkTriggerConfig.Config
 
+	trigger.context, trigger.cancel = context.WithCancel(ctx)
+
 	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.MessageBus.Type))
 
 	logger.Info(fmt.Sprintf("Subscribing to topic: '%s' @ %s://%s:%d",
@@ -193,13 +195,10 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, ctx context.Context, tc appsdk.TriggerConfig) appsdk.Trigger {
-	ctx, cancel := context.WithCancel(ctx)
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, tc appsdk.TriggerConfig) appsdk.Trigger {
 	return &watermillTrigger{
 		pub:              publisher,
 		sub:              subscriber,
-		context:          ctx,
-		cancel:           cancel,
 		sdkTriggerConfig: tc,
 		marshaler:        format.marshal,
 		unmarshaler:      format.unmarshal,
