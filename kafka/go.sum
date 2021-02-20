@@ -14,8 +14,8 @@ github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0 h1:Cr6hGNWLTNj9fSobKVaMCdvgrk
 github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0/go.mod h1:eoLUMudD+n7b5HS2PXyInAK5N/NZdElbI3+2AciTE2c=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
-github.com/alexcuse/edgex-watermill/core v0.0.0-20210212235423-aba3e59583f6 h1:uN96e2hSrYQT2WOznP1HoifawYr21RWysRZPoKCYSsI=
-github.com/alexcuse/edgex-watermill/core v0.0.0-20210212235423-aba3e59583f6/go.mod h1:VGq/F+c4YpTpeHmaiUKh7lFxKCTDl/iCc6nLzoloOWQ=
+github.com/alexcuse/edgex-watermill/core v0.0.0-20210220144134-c7b77c7ad0d3 h1:Fm9wlPlG103BswqCWOr4o4dSVFJsfs7lw8GfBwqv+/Q=
+github.com/alexcuse/edgex-watermill/core v0.0.0-20210220144134-c7b77c7ad0d3/go.mod h1:VGq/F+c4YpTpeHmaiUKh7lFxKCTDl/iCc6nLzoloOWQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da h1:8GUt8eRujhVEGZFFEjBj46YV4rDjvGrNxb0KMWYkL2I=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
