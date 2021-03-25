@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/appcontext"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/appsdk"
+	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/util"
 	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
@@ -15,14 +14,15 @@ import (
 )
 
 type watermillTrigger struct {
-	pub              message.Publisher
-	sub              message.Subscriber
-	marshaler        WatermillMarshaler
-	unmarshaler      WatermillUnmarshaler
-	topics           []string
-	context          context.Context
-	cancel           context.CancelFunc
-	sdkTriggerConfig appsdk.TriggerConfig
+	pub                  message.Publisher
+	sub                  message.Subscriber
+	marshaler            WatermillMarshaler
+	unmarshaler          WatermillUnmarshaler
+	topics               []string
+	context              context.Context
+	cancel               context.CancelFunc
+	sdkTriggerConfig     interfaces.TriggerConfig
+	edgexWatermillConfig *WatermillConfigWrapper
 }
 
 func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string, publishTopic string) {
@@ -59,12 +59,15 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 	watermillMessage.Ack()
 }
 
-func (trigger *watermillTrigger) output(publishTopic string, ctx *appcontext.Context) error {
-	if ctx.OutputData != nil && trigger.pub != nil {
+func (trigger *watermillTrigger) output(publishTopic string, ctx interfaces.AppFunctionContext) error {
+	logger := ctx.LoggingClient()
+
+	output := ctx.ResponseData()
+	if output != nil && trigger.pub != nil {
 		msg, err := trigger.marshaler(types.MessageEnvelope{
-			CorrelationID: ctx.CorrelationID,
-			Payload:       ctx.OutputData,
-			ContentType:   ctx.ResponseContentType,
+			CorrelationID: ctx.CorrelationID(),
+			Payload:       output,
+			ContentType:   ctx.ResponseContentType(),
 		})
 
 		if err != nil {
@@ -77,7 +80,7 @@ func (trigger *watermillTrigger) output(publishTopic string, ctx *appcontext.Con
 			return err
 		}
 
-		ctx.LoggingClient.Trace("Published message to trigger output", "topic", publishTopic, clients.CorrelationHeader, ctx.CorrelationID)
+		logger.Trace("Published message to trigger output", "topic", publishTopic, clients.CorrelationHeader, ctx.CorrelationID)
 	}
 	return nil
 }
@@ -100,23 +103,20 @@ func (trigger *watermillTrigger) background(publishTopic string, bg types.Messag
 
 func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan types.MessageEnvelope) (bootstrap.Deferred, error) {
 	logger := trigger.sdkTriggerConfig.Logger
-	cfg := trigger.sdkTriggerConfig.Config
 
 	trigger.context, trigger.cancel = context.WithCancel(ctx)
 
-	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.MessageBus.Type))
+	cfg := trigger.edgexWatermillConfig.WatermillTrigger
 
-	logger.Info(fmt.Sprintf("Subscribing to topic: '%s' @ %s://%s:%d",
-		cfg.Binding.SubscribeTopics,
-		cfg.MessageBus.SubscribeHost.Protocol,
-		cfg.MessageBus.SubscribeHost.Host,
-		cfg.MessageBus.SubscribeHost.Port))
+	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.Type))
 
-	if len(strings.TrimSpace(trigger.sdkTriggerConfig.Config.Binding.SubscribeTopics)) == 0 {
+	logger.Info(fmt.Sprintf("Subscribing to topic: '%s' @ %s", cfg.SubscribeTopics, cfg.BrokerUrl))
+
+	if len(strings.TrimSpace(cfg.SubscribeTopics)) == 0 {
 		// Still allows subscribing to blank topic to receive all messages
-		trigger.topics = append(trigger.topics, trigger.sdkTriggerConfig.Config.Binding.SubscribeTopics)
+		trigger.topics = append(trigger.topics, cfg.SubscribeTopics)
 	} else {
-		topics := util.DeleteEmptyAndTrim(strings.FieldsFunc(trigger.sdkTriggerConfig.Config.Binding.SubscribeTopics, util.SplitComma))
+		topics := util.DeleteEmptyAndTrim(strings.FieldsFunc(cfg.SubscribeTopics, util.SplitComma))
 		for _, topic := range topics {
 			trigger.topics = append(trigger.topics, topic)
 		}
@@ -139,21 +139,13 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 					return
 
 				case m := <-collectFrom:
-					go func() {
-						trigger.input(m, t, trigger.sdkTriggerConfig.Config.Binding.PublishTopic)
-					}()
+					go func(pubTopic string) {
+						trigger.input(m, t, pubTopic)
+					}(cfg.PublishTopic)
 
 				}
 			}
 		}(wg, tributary, topic)
-	}
-
-	if len(cfg.MessageBus.PublishHost.Host) > 0 {
-		logger.Info(fmt.Sprintf("Publishing to topic: '%s' @ %s://%s:%d",
-			cfg.Binding.PublishTopic,
-			cfg.MessageBus.PublishHost.Protocol,
-			cfg.MessageBus.PublishHost.Host,
-			cfg.MessageBus.PublishHost.Port))
 	}
 
 	wg.Add(1)
@@ -167,9 +159,9 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 				return
 
 			case bg := <-background:
-				go func() {
-					trigger.background(trigger.sdkTriggerConfig.Config.Binding.PublishTopic, bg)
-				}()
+				go func(pubTopic string) {
+					trigger.background(pubTopic, bg)
+				}(cfg.PublishTopic)
 
 			}
 		}
@@ -195,13 +187,14 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, tc appsdk.TriggerConfig) appsdk.Trigger {
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, tc interfaces.TriggerConfig, messageClientConfig *WatermillConfigWrapper) interfaces.Trigger {
 	return &watermillTrigger{
-		pub:              publisher,
-		sub:              subscriber,
-		sdkTriggerConfig: tc,
-		marshaler:        format.marshal,
-		unmarshaler:      format.unmarshal,
+		pub:                  publisher,
+		sub:                  subscriber,
+		sdkTriggerConfig:     tc,
+		edgexWatermillConfig: messageClientConfig,
+		marshaler:            format.marshal,
+		unmarshaler:          format.unmarshal,
 	}
 }
 

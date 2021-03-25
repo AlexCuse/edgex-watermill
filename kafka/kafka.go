@@ -18,209 +18,45 @@ package kafka
 
 import (
 	"context"
-	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
-	ewm "github.com/alexcuse/edgex-watermill/core"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/appsdk"
+	ewm "github.com/alexcuse/edgex-watermill/v2/core"
+	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
-	"strconv"
 	"strings"
-	"time"
 )
 
-func kafkaConsumerConfig(options types.MessageBusConfig) kafka.SubscriberConfig {
-	saramaConfig := kafka.DefaultSaramaSubscriberConfig()
-	saramaConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
+func kafkaConsumerConfig(config ewm.WatermillConfig) kafka.SubscriberConfig {
+	/*
+		saramaConfig := config.ConfigOverride
 
-	if kv, found := options.Optional["KafkaVersion"]; found {
-		var err error
-
-		saramaConfig.Version, err = sarama.ParseKafkaVersion(kv)
-
-		if err != nil {
-			panic(err)
+		if saramaConfig == nil {
+			saramaConfig = kafka.DefaultSaramaSubscriberConfig()
 		}
-	}
-
-	if clientid, found := options.Optional["ClientID"]; found {
-		saramaConfig.ClientID = clientid
-	}
-
-	if qc, found := options.Optional["ChannelBufferSize"]; found {
-		qcap, err := strconv.Atoi(qc)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.ChannelBufferSize = qcap
-	}
-
-	if cmi, found := options.Optional["CommitInterval"]; found {
-		ci, err := time.ParseDuration(cmi)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Offsets.AutoCommit.Interval = ci
-		saramaConfig.Consumer.Offsets.AutoCommit.Enable = true
-	}
-
-	if mb, found := options.Optional["MinBytes"]; found {
-		mbytes, err := strconv.ParseInt(mb, 10, 32)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Fetch.Min = int32(mbytes)
-	}
-
-	if mb, found := options.Optional["MaxBytes"]; found {
-		mbytes, err := strconv.ParseInt(mb, 10, 32)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Fetch.Max = int32(mbytes)
-	}
-
-	if mw, found := options.Optional["MaxWait"]; found {
-		mwait, err := time.ParseDuration(mw)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.MaxWaitTime = mwait
-	}
-
-	if hb, found := options.Optional["HeartbeatInterval"]; found {
-		hbi, err := time.ParseDuration(hb)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Group.Heartbeat.Interval = hbi
-	}
-
-	if st, found := options.Optional["SessionTimeout"]; found {
-		sto, err := time.ParseDuration(st)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Consumer.Group.Session.Timeout = sto
-	}
-
-	if so, found := options.Optional["StartOffset"]; found {
-		if so == "-1" || strings.EqualFold(so, "newest") {
-			saramaConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
-		} else if so == "-2" || strings.EqualFold(so, "oldest") {
-			saramaConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
-		} else {
-			panic("StartOffset must be -1/newest or -2/oldest")
-		}
-	}
+	*/
 
 	return kafka.SubscriberConfig{
-		Brokers:               []string{options.SubscribeHost.Host + ":" + strconv.Itoa(options.SubscribeHost.Port)},
+		Brokers:               []string{config.BrokerUrl},
 		Unmarshaler:           kafka.DefaultMarshaler{},
-		OverwriteSaramaConfig: saramaConfig,
-		ConsumerGroup:         options.Optional["ConsumerGroupID"],
+		OverwriteSaramaConfig: kafka.DefaultSaramaSubscriberConfig(),
+		ConsumerGroup:         config.ConsumerGroup,
 	}
 }
 
-func kafkaProducerConfig(options types.MessageBusConfig) kafka.PublisherConfig {
-	saramaConfig := kafka.DefaultSaramaSyncPublisherConfig()
-
-	if kv, found := options.Optional["KafkaVersion"]; found {
-		var err error
-
-		saramaConfig.Version, err = sarama.ParseKafkaVersion(kv)
-
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if clientid, found := options.Optional["ClientID"]; found {
-		saramaConfig.ClientID = clientid
-	}
-
-	if qc, found := options.Optional["ChannelBufferSize"]; found {
-		qcap, err := strconv.Atoi(qc)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.ChannelBufferSize = qcap
-	}
-
-	if wt, found := options.Optional["WriteTimeout"]; found {
-		wto, err := time.ParseDuration(wt)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Timeout = wto
-	}
-
-	if req, found := options.Optional["RequiredAcks"]; found {
-		switch strings.ToLower(req) {
-		case "all", "-1":
-			saramaConfig.Producer.RequiredAcks = sarama.RequiredAcks(-1)
-			break
-		case "one", "1":
-			saramaConfig.Producer.RequiredAcks = sarama.RequiredAcks(1)
-			break
-		case "none", "0":
-			saramaConfig.Producer.RequiredAcks = sarama.RequiredAcks(0)
-			break
-		}
-	}
-
-	if rm, found := options.Optional["RetryMax"]; found {
-		rmi, err := strconv.Atoi(rm)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Retry.Max = rmi
-	}
-
-	if rb, found := options.Optional["RetryBackoff"]; found {
-		rbd, err := time.ParseDuration(rb)
-
-		if err != nil {
-			panic(err)
-		}
-
-		saramaConfig.Producer.Retry.Backoff = rbd
-	}
-
+func kafkaProducerConfig(config ewm.WatermillConfig) kafka.PublisherConfig {
 	return kafka.PublisherConfig{
-		Brokers:               []string{options.PublishHost.Host + ":" + strconv.Itoa(options.PublishHost.Port)},
+		Brokers:               []string{config.BrokerUrl},
 		Marshaler:             kafka.DefaultMarshaler{},
-		OverwriteSaramaConfig: saramaConfig,
+		OverwriteSaramaConfig: kafka.DefaultSaramaSyncPublisherConfig(),
 	}
 }
 
-func Client(ctx context.Context, config types.MessageBusConfig) (messaging.MessageClient, error) {
+func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageClient, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
 
-	if config.PublishHost.Host != "" {
+	if config.PublishTopic != "" {
 		p, err := Publisher(config)
 
 		if err != nil {
@@ -230,7 +66,7 @@ func Client(ctx context.Context, config types.MessageBusConfig) (messaging.Messa
 		pub = p
 	}
 
-	if config.SubscribeHost.Host != "" {
+	if config.SubscribeTopics != "" {
 		s, err := Subscriber(config)
 
 		if err != nil {
@@ -242,7 +78,7 @@ func Client(ctx context.Context, config types.MessageBusConfig) (messaging.Messa
 
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(config.Optional["WatermillFormat"]) {
+	switch strings.ToLower(config.WatermillFormat) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -262,41 +98,38 @@ func Client(ctx context.Context, config types.MessageBusConfig) (messaging.Messa
 	)
 }
 
-func Publisher(config types.MessageBusConfig) (message.Publisher, error) {
+func Publisher(config ewm.WatermillConfig) (message.Publisher, error) {
 	return kafka.NewPublisher(kafkaProducerConfig(config), watermill.NewCaptureLogger())
 }
 
-func Subscriber(config types.MessageBusConfig) (message.Subscriber, error) {
+func Subscriber(config ewm.WatermillConfig) (message.Subscriber, error) {
 	return kafka.NewSubscriber(kafkaConsumerConfig(config), watermill.NewCaptureLogger())
 }
 
-func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
-	var pub message.Publisher
-	var sub message.Subscriber
+func Trigger(tc interfaces.TriggerConfig) (interfaces.Trigger, error) {
+	cfg := &ewm.WatermillConfigWrapper{}
 
-	if tc.Config.MessageBus.PublishHost.Host != "" {
-		p, err := Publisher(tc.Config.MessageBus)
+	err := tc.ConfigLoader(cfg, "WatermillTrigger")
 
-		if err != nil {
-			return nil, err
-		}
-
-		pub = p
+	if err != nil {
+		return nil, err
 	}
 
-	if tc.Config.MessageBus.SubscribeHost.Host != "" {
-		s, err := Subscriber(tc.Config.MessageBus)
+	pub, err := Publisher(cfg.WatermillTrigger)
 
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
+	}
 
-		sub = s
+	sub, err := Subscriber(cfg.WatermillTrigger)
+
+	if err != nil {
+		return nil, err
 	}
 
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(tc.Config.MessageBus.Optional["WatermillFormat"]) {
+	switch strings.ToLower(cfg.WatermillTrigger.WatermillFormat) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -304,6 +137,7 @@ func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
 	case "rawoutput":
 		fmt = &ewm.RawOutputMessageFormat{}
 	case "edgex":
+		fmt = &ewm.EdgeXMessageFormat{}
 	default:
 		fmt = &ewm.EdgeXMessageFormat{}
 	}
@@ -313,9 +147,10 @@ func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
 		sub,
 		fmt,
 		tc,
+		cfg,
 	), nil
 }
 
-func Register(sdk *appsdk.AppFunctionsSDK) {
-	sdk.RegisterCustomTriggerFactory("kafka-watermill", Trigger)
+func Register(svc interfaces.ApplicationService) {
+	svc.RegisterCustomTriggerFactory("kafka-watermill", Trigger)
 }

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/appcontext"
+	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/google/uuid"
@@ -16,7 +16,7 @@ import (
 func TestOutput_NilOutputData(t *testing.T) {
 	sut := watermillTrigger{}
 
-	err := sut.output("", &appcontext.Context{})
+	err := sut.output("", pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{}))
 
 	require.NoError(t, err)
 }
@@ -24,54 +24,47 @@ func TestOutput_NilOutputData(t *testing.T) {
 func TestOutput_NilPub(t *testing.T) {
 	sut := watermillTrigger{}
 
-	err := sut.output("", &appcontext.Context{
-		OutputData: []byte("OK"),
-	})
+	ctx := pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{})
+	ctx.SetResponseData([]byte("OK"))
+
+	err := sut.output("", ctx)
 
 	require.NoError(t, err)
 }
 
 func TestOutput_MarshalError(t *testing.T) {
-	topic := uuid.New().String()
+	topic := uuid.NewString()
 
-	ctx := appcontext.Context{
-		LoggingClient:       logger.MockLogger{},
-		OutputData:          []byte("OK"),
-		CorrelationID:       uuid.New().String(),
-		ResponseContentType: uuid.New().String(),
-	}
+	ctx := pkg.NewAppFuncContextForTest(uuid.NewString(), logger.NewMockClient())
+	ctx.SetResponseData([]byte{})
 
 	msg := message.NewMessage("", []byte{})
 
 	marshaler := mockMarshaler{}
 
 	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
-		return ctx.CorrelationID == envelope.CorrelationID && ctx.ResponseContentType == envelope.ContentType && bytes.Equal(ctx.OutputData, envelope.Payload)
+		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
 	})).Return(msg, errors.New(""))
 
 	sut := watermillTrigger{marshaler: marshaler.Execute, pub: &mockPublisher{}}
 
-	err := sut.output(topic, &ctx)
+	err := sut.output(topic, ctx)
 
 	require.Error(t, err)
 }
 
 func TestOutput_PublishError(t *testing.T) {
-	topic := uuid.New().String()
+	topic := uuid.NewString()
 
-	ctx := appcontext.Context{
-		LoggingClient:       logger.MockLogger{},
-		OutputData:          []byte("OK"),
-		CorrelationID:       uuid.New().String(),
-		ResponseContentType: uuid.New().String(),
-	}
+	ctx := pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{})
+	ctx.SetResponseData([]byte(uuid.NewString()))
 
-	msg := message.NewMessage(ctx.CorrelationID, ctx.OutputData)
+	msg := message.NewMessage(ctx.CorrelationID(), ctx.ResponseData())
 
 	marshaler := mockMarshaler{}
 
 	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
-		return ctx.CorrelationID == envelope.CorrelationID && ctx.ResponseContentType == envelope.ContentType && bytes.Equal(ctx.OutputData, envelope.Payload)
+		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
 	})).Return(msg, nil)
 
 	pub := mockPublisher{}
@@ -79,20 +72,16 @@ func TestOutput_PublishError(t *testing.T) {
 
 	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
-	err := sut.output(topic, &ctx)
+	err := sut.output(topic, ctx)
 
 	require.Error(t, err)
 }
 
 func TestOutput(t *testing.T) {
-	topic := uuid.New().String()
+	topic := uuid.NewString()
 
-	ctx := appcontext.Context{
-		LoggingClient:       logger.MockLogger{},
-		OutputData:          []byte("OK"),
-		CorrelationID:       uuid.New().String(),
-		ResponseContentType: uuid.New().String(),
-	}
+	ctx := pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{})
+	ctx.SetResponseData([]byte{})
 
 	marshaled := message.Message{}
 
@@ -101,19 +90,19 @@ func TestOutput(t *testing.T) {
 
 	marshaler := mockMarshaler{}
 	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
-		return ctx.CorrelationID == envelope.CorrelationID && ctx.ResponseContentType == envelope.ContentType && bytes.Equal(ctx.OutputData, envelope.Payload)
+		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
 	})).Return(&marshaled, nil)
 
 	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
-	err := sut.output(topic, &ctx)
+	err := sut.output(topic, ctx)
 
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(marshaler.Calls))
-	require.Equal(t, ctx.CorrelationID, marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).CorrelationID)
-	require.Equal(t, ctx.OutputData, marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).Payload)
-	require.Equal(t, ctx.ResponseContentType, marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).ContentType)
+	require.Equal(t, ctx.CorrelationID(), marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).CorrelationID)
+	require.Equal(t, ctx.ResponseData(), marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).Payload)
+	require.Equal(t, ctx.ResponseContentType(), marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).ContentType)
 
 	require.Equal(t, 1, len(pub.Calls))
 	require.Equal(t, topic, pub.Calls[0].Arguments[0])
@@ -123,12 +112,12 @@ func TestOutput(t *testing.T) {
 }
 
 func TestBackground_MarshalError(t *testing.T) {
-	topic := uuid.New().String()
+	topic := uuid.NewString()
 
 	env := types.MessageEnvelope{
 		Payload:       []byte("OK"),
-		CorrelationID: uuid.New().String(),
-		ContentType:   uuid.New().String(),
+		CorrelationID: uuid.NewString(),
+		ContentType:   uuid.NewString(),
 	}
 
 	marshaler := mockMarshaler{}
@@ -143,12 +132,12 @@ func TestBackground_MarshalError(t *testing.T) {
 }
 
 func TestBackground_PublishError(t *testing.T) {
-	topic := uuid.New().String()
+	topic := uuid.NewString()
 
 	env := types.MessageEnvelope{
 		Payload:       []byte("OK"),
-		CorrelationID: uuid.New().String(),
-		ContentType:   uuid.New().String(),
+		CorrelationID: uuid.NewString(),
+		ContentType:   uuid.NewString(),
 	}
 
 	msg := message.NewMessage(env.CorrelationID, env.Payload)
@@ -168,12 +157,12 @@ func TestBackground_PublishError(t *testing.T) {
 }
 
 func TestBackground(t *testing.T) {
-	topic := uuid.New().String()
+	topic := uuid.NewString()
 
 	env := types.MessageEnvelope{
 		Payload:       []byte("OK"),
-		CorrelationID: uuid.New().String(),
-		ContentType:   uuid.New().String(),
+		CorrelationID: uuid.NewString(),
+		ContentType:   uuid.NewString(),
 	}
 
 	marshaled := message.Message{}

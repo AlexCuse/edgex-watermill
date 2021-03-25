@@ -5,41 +5,28 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	_amqp "github.com/ThreeDotsLabs/watermill-amqp/pkg/amqp"
 	"github.com/ThreeDotsLabs/watermill/message"
-	ewm "github.com/alexcuse/edgex-watermill/core"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/appsdk"
+	ewm "github.com/alexcuse/edgex-watermill/v2/core"
+	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"os"
 	"strings"
 )
 
-func Client(ctx context.Context, config types.MessageBusConfig) (messaging.MessageClient, error) {
-	var pub message.Publisher
-	var sub message.Subscriber
+func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageClient, error) {
+	pub, err := Publisher(config)
 
-	if config.PublishHost.Host != "" {
-		p, err := Publisher(config)
-
-		if err != nil {
-			return nil, err
-		}
-
-		pub = p
+	if err != nil {
+		return nil, err
 	}
 
-	if config.SubscribeHost.Host != "" {
-		s, err := Subscriber(config)
+	sub, err := Subscriber(config)
 
-		if err != nil {
-			return nil, err
-		}
-
-		sub = s
+	if err != nil {
+		return nil, err
 	}
-
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(config.Optional["WatermillFormat"]) {
+	switch strings.ToLower(config.WatermillFormat) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -59,41 +46,38 @@ func Client(ctx context.Context, config types.MessageBusConfig) (messaging.Messa
 	)
 }
 
-func Publisher(config types.MessageBusConfig) (message.Publisher, error) {
-	return _amqp.NewPublisher(_amqp.NewDurableQueueConfig(config.Optional["BrokerURL"]), watermill.NewStdLoggerWithOut(os.Stdout, true, false))
+func Publisher(config ewm.WatermillConfig) (message.Publisher, error) {
+	return _amqp.NewPublisher(_amqp.NewDurableQueueConfig(config.BrokerUrl), watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
-func Subscriber(config types.MessageBusConfig) (message.Subscriber, error) {
-	return _amqp.NewSubscriber(_amqp.NewDurableQueueConfig(config.Optional["BrokerURL"]), watermill.NewStdLoggerWithOut(os.Stdout, true, false))
+func Subscriber(config ewm.WatermillConfig) (message.Subscriber, error) {
+	return _amqp.NewSubscriber(_amqp.NewDurableQueueConfig(config.BrokerUrl), watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
-func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
-	var pub message.Publisher
-	var sub message.Subscriber
+func Trigger(tc interfaces.TriggerConfig) (interfaces.Trigger, error) {
+	cfg := &ewm.WatermillConfigWrapper{}
 
-	if tc.Config.MessageBus.PublishHost.Host != "" {
-		p, err := Publisher(tc.Config.MessageBus)
+	err := tc.ConfigLoader(cfg, "WatermillTrigger")
 
-		if err != nil {
-			return nil, err
-		}
-
-		pub = p
+	if err != nil {
+		return nil, err
 	}
 
-	if tc.Config.MessageBus.SubscribeHost.Host != "" {
-		s, err := Subscriber(tc.Config.MessageBus)
+	pub, err := Publisher(cfg.WatermillTrigger)
 
-		if err != nil {
-			return nil, err
-		}
+	if err != nil {
+		return nil, err
+	}
 
-		sub = s
+	sub, err := Subscriber(cfg.WatermillTrigger)
+
+	if err != nil {
+		return nil, err
 	}
 
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(tc.Config.MessageBus.Optional["WatermillFormat"]) {
+	switch strings.ToLower(cfg.WatermillTrigger.WatermillFormat) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -101,6 +85,7 @@ func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
 	case "rawoutput":
 		fmt = &ewm.RawOutputMessageFormat{}
 	case "edgex":
+		fmt = &ewm.EdgeXMessageFormat{}
 	default:
 		fmt = &ewm.EdgeXMessageFormat{}
 	}
@@ -110,9 +95,10 @@ func Trigger(tc appsdk.TriggerConfig) (appsdk.Trigger, error) {
 		sub,
 		fmt,
 		tc,
+		cfg,
 	), nil
 }
 
-func Register(sdk *appsdk.AppFunctionsSDK) {
-	sdk.RegisterCustomTriggerFactory("amqp-watermill", Trigger)
+func Register(svc interfaces.ApplicationService) {
+	svc.RegisterCustomTriggerFactory("amqp-watermill", Trigger)
 }
