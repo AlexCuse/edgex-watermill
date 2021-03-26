@@ -24,9 +24,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type RawMessageFormat struct{}
+type RawWireFormat struct{}
 
-func (*RawMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+func (*RawWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
 	correlationID := envelope.CorrelationID
 
 	if correlationID == "" {
@@ -42,7 +42,7 @@ func (*RawMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Messa
 	return m, nil
 }
 
-func (*RawMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
+func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
 	correlationID := msg.Metadata.Get(middleware.CorrelationIDMetadataKey)
 
 	if correlationID == "" {

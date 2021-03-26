@@ -25,9 +25,9 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-type EdgeXMessageFormat struct{}
+type EdgeXWireFormat struct{}
 
-func (*EdgeXMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
 	var pl []byte
 	var err error
 
@@ -50,7 +50,7 @@ func (*EdgeXMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Mes
 	return msg, nil
 }
 
-func (*EdgeXMessageFormat) unmarshal(message *message.Message) (types.MessageEnvelope, error) {
+func (*EdgeXWireFormat) unmarshal(message *message.Message) (types.MessageEnvelope, error) {
 
 	var err error
 

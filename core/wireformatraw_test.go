@@ -34,7 +34,7 @@ func TestRawMessageFormat_Marshal_HasCorrelationID(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	msg, err := sut.marshal(env)
 
@@ -57,7 +57,7 @@ func TestRawMessageFormat_Marshal_NoCorrelationId(t *testing.T) {
 		ContentType:   uuid.New().String(),
 	}
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	msg, err := sut.marshal(env)
 
@@ -82,7 +82,7 @@ func TestRawMessageFormat_Unmarshal_HasCorrelationId(t *testing.T) {
 	msg.Metadata.Set(EdgeXContentType, contentType)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	env, err := sut.unmarshal(msg)
 
@@ -103,7 +103,7 @@ func TestRawMessageFormat_Unmarshal_HasMessageID(t *testing.T) {
 	msg.Metadata.Set(EdgeXContentType, contentType)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	env, err := sut.unmarshal(msg)
 
@@ -123,7 +123,7 @@ func TestRawMessageFormat_Marshal_HasNoID(t *testing.T) {
 	msg.Metadata.Set(EdgeXContentType, contentType)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	env, err := sut.unmarshal(msg)
 
@@ -143,7 +143,7 @@ func TestRawMessageFormat_Unmarshal_InfersCBORByDefault(t *testing.T) {
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	env, err := sut.unmarshal(msg)
 
@@ -163,7 +163,7 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	env, err := sut.unmarshal(msg)
 
@@ -183,7 +183,7 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXChecksum, checksum)
 
-	sut := RawMessageFormat{}
+	sut := RawWireFormat{}
 
 	env, err := sut.unmarshal(msg)
 

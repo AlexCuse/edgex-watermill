@@ -27,18 +27,18 @@ func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageC
 		return nil, err
 	}
 
-	var fmt ewm.MessageFormat
+	var fmt ewm.WireFormat
 
 	switch strings.ToLower(config.Optional["WireFormat"]) {
 	case "raw":
-		fmt = &ewm.RawMessageFormat{}
+		fmt = &ewm.RawWireFormat{}
 	case "rawinput":
-		fmt = &ewm.RawInputMessageFormat{}
+		fmt = &ewm.RawInputWireFormat{}
 	case "rawoutput":
-		fmt = &ewm.RawOutputMessageFormat{}
+		fmt = &ewm.RawOutputWireFormat{}
 	case "edgex":
 	default:
-		fmt = &ewm.EdgeXMessageFormat{}
+		fmt = &ewm.EdgeXWireFormat{}
 	}
 
 	return ewm.NewWatermillClient(
@@ -80,19 +80,19 @@ func Trigger(wc *ewm.WatermillConfigWrapper, cfg interfaces.TriggerConfig) (inte
 		return nil, err
 	}
 
-	var fmt ewm.MessageFormat
+	var fmt ewm.WireFormat
 
 	switch strings.ToLower(wc.WatermillTrigger.WireFormat) {
 	case "raw":
-		fmt = &ewm.RawMessageFormat{}
+		fmt = &ewm.RawWireFormat{}
 	case "rawinput":
-		fmt = &ewm.RawInputMessageFormat{}
+		fmt = &ewm.RawInputWireFormat{}
 	case "rawoutput":
-		fmt = &ewm.RawOutputMessageFormat{}
+		fmt = &ewm.RawOutputWireFormat{}
 	case "edgex":
-		fmt = &ewm.EdgeXMessageFormat{}
+		fmt = &ewm.EdgeXWireFormat{}
 	default:
-		fmt = &ewm.EdgeXMessageFormat{}
+		fmt = &ewm.EdgeXWireFormat{}
 	}
 
 	return ewm.NewWatermillTrigger(

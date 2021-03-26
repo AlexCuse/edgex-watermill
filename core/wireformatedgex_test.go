@@ -27,7 +27,7 @@ import (
 	"testing"
 )
 
-func TestEdgexMessageFormat_JSON_Marshal(t *testing.T) {
+func TestEdgeXWireFormat_JSON_Marshal(t *testing.T) {
 	env := types.MessageEnvelope{
 		Checksum:      uuid.New().String(),
 		CorrelationID: uuid.New().String(),
@@ -37,7 +37,7 @@ func TestEdgexMessageFormat_JSON_Marshal(t *testing.T) {
 
 	jsn, _ := json.Marshal(env)
 
-	sut := EdgeXMessageFormat{}
+	sut := EdgeXWireFormat{}
 
 	msg, err := sut.marshal(env)
 
@@ -52,7 +52,7 @@ func TestEdgexMessageFormat_JSON_Marshal(t *testing.T) {
 	require.Zero(t, msg.Metadata.Get(EdgeXChecksum), "dont use metadata for edgex format")
 }
 
-func TestEdgexMessageFormat_JSON_Unmarshal(t *testing.T) {
+func TestEdgeXWireFormat_JSON_Unmarshal(t *testing.T) {
 	correlationID := uuid.New().String()
 
 	env := types.MessageEnvelope{CorrelationID: correlationID, Payload: []byte("OK")}
@@ -61,7 +61,7 @@ func TestEdgexMessageFormat_JSON_Unmarshal(t *testing.T) {
 
 	msg := message.NewMessage(uuid.New().String(), jsn)
 
-	sut := EdgeXMessageFormat{}
+	sut := EdgeXWireFormat{}
 
 	result, err := sut.unmarshal(msg)
 
@@ -73,10 +73,10 @@ func TestEdgexMessageFormat_JSON_Unmarshal(t *testing.T) {
 	require.Equal(t, correlationID, result.CorrelationID, "should read correlation ID from metadata if present")
 }
 
-func TestEdgexMessageFormat_JSON_Unmarshal_JSONError(t *testing.T) {
+func TestEdgeXWireFormat_JSON_Unmarshal_JSONError(t *testing.T) {
 	msg := message.NewMessage(uuid.New().String(), []byte("not json string"))
 
-	sut := EdgeXMessageFormat{}
+	sut := EdgeXWireFormat{}
 
 	result, err := sut.unmarshal(msg)
 

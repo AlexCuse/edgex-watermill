@@ -21,22 +21,11 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 )
 
-type RawInputMessageFormat struct{}
-
-func (*RawInputMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
-	return (&EdgeXMessageFormat{}).marshal(envelope)
+type WireFormat interface {
+	marshal(envelope types.MessageEnvelope) (*message.Message, error)
+	unmarshal(*message.Message) (types.MessageEnvelope, error)
 }
 
-func (*RawInputMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
-	return (&RawMessageFormat{}).unmarshal(msg)
-}
+type WatermillMarshaler func(envelope types.MessageEnvelope) (*message.Message, error)
 
-type RawOutputMessageFormat struct{}
-
-func (*RawOutputMessageFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
-	return (&RawMessageFormat{}).marshal(envelope)
-}
-
-func (*RawOutputMessageFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
-	return (&EdgeXMessageFormat{}).unmarshal(msg)
-}
+type WatermillUnmarshaler func(*message.Message) (types.MessageEnvelope, error)

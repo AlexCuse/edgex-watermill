@@ -187,7 +187,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, watermillConfig *WatermillConfigWrapper, edgeXConfig interfaces.TriggerConfig) interfaces.Trigger {
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format WireFormat, watermillConfig *WatermillConfigWrapper, edgeXConfig interfaces.TriggerConfig) interfaces.Trigger {
 	return &watermillTrigger{
 		pub:             publisher,
 		sub:             subscriber,

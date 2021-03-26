@@ -28,7 +28,7 @@ import (
 )
 
 func TestNewWatermillClient(t *testing.T) {
-	format := &RawMessageFormat{}
+	format := &RawWireFormat{}
 
 	client, err := NewWatermillClient(context.Background(), nil, nil, format)
 

@@ -96,9 +96,9 @@ func (c *watermillClient) Disconnect() error {
 	return result
 }
 
-func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format MessageFormat) (messaging.MessageClient, error) {
+func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format WireFormat) (messaging.MessageClient, error) {
 	if format == nil {
-		format = &EdgeXMessageFormat{}
+		format = &EdgeXWireFormat{}
 	}
 
 	return newWatermillClientWithOptions(ctx, pub, sub, WatermillClientOptions{
