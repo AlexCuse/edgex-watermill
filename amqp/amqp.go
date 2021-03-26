@@ -26,7 +26,7 @@ func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageC
 	}
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(config.WatermillFormat) {
+	switch strings.ToLower(config.WireFormat) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -54,22 +54,14 @@ func Subscriber(config ewm.WatermillConfig) (message.Subscriber, error) {
 	return _amqp.NewSubscriber(_amqp.NewDurableQueueConfig(config.BrokerUrl), watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
-func Trigger(tc interfaces.TriggerConfig) (interfaces.Trigger, error) {
-	cfg := &ewm.WatermillConfigWrapper{}
-
-	err := tc.ConfigLoader(cfg, "WatermillTrigger")
+func Trigger(wc *ewm.WatermillConfigWrapper, cfg interfaces.TriggerConfig) (interfaces.Trigger, error) {
+	pub, err := Publisher(wc.WatermillTrigger)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pub, err := Publisher(cfg.WatermillTrigger)
-
-	if err != nil {
-		return nil, err
-	}
-
-	sub, err := Subscriber(cfg.WatermillTrigger)
+	sub, err := Subscriber(wc.WatermillTrigger)
 
 	if err != nil {
 		return nil, err
@@ -77,7 +69,7 @@ func Trigger(tc interfaces.TriggerConfig) (interfaces.Trigger, error) {
 
 	var fmt ewm.MessageFormat
 
-	switch strings.ToLower(cfg.WatermillTrigger.WatermillFormat) {
+	switch strings.ToLower(wc.WatermillTrigger.WireFormat) {
 	case "raw":
 		fmt = &ewm.RawMessageFormat{}
 	case "rawinput":
@@ -94,11 +86,7 @@ func Trigger(tc interfaces.TriggerConfig) (interfaces.Trigger, error) {
 		pub,
 		sub,
 		fmt,
-		tc,
+		wc,
 		cfg,
 	), nil
-}
-
-func Register(svc interfaces.ApplicationService) {
-	svc.RegisterCustomTriggerFactory("amqp-watermill", Trigger)
 }

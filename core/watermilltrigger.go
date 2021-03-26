@@ -14,19 +14,19 @@ import (
 )
 
 type watermillTrigger struct {
-	pub                  message.Publisher
-	sub                  message.Subscriber
-	marshaler            WatermillMarshaler
-	unmarshaler          WatermillUnmarshaler
-	topics               []string
-	context              context.Context
-	cancel               context.CancelFunc
-	sdkTriggerConfig     interfaces.TriggerConfig
-	edgexWatermillConfig *WatermillConfigWrapper
+	pub             message.Publisher
+	sub             message.Subscriber
+	marshaler       WatermillMarshaler
+	unmarshaler     WatermillUnmarshaler
+	topics          []string
+	context         context.Context
+	cancel          context.CancelFunc
+	watermillConfig *WatermillConfigWrapper
+	edgeXConfig     interfaces.TriggerConfig
 }
 
 func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string, publishTopic string) {
-	logger := trigger.sdkTriggerConfig.Logger
+	logger := trigger.edgeXConfig.Logger
 
 	msg, err := trigger.unmarshaler(watermillMessage)
 
@@ -36,11 +36,11 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 		return
 	}
 
-	edgexContext := trigger.sdkTriggerConfig.ContextBuilder(msg)
+	edgexContext := trigger.edgeXConfig.ContextBuilder(msg)
 
 	logger.Trace("Received message", "topic", receiveTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
 
-	err = trigger.sdkTriggerConfig.MessageProcessor(edgexContext, msg)
+	err = trigger.edgeXConfig.MessageProcessor(edgexContext, msg)
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to process message: %s", err.Error()))
@@ -102,11 +102,11 @@ func (trigger *watermillTrigger) background(publishTopic string, bg types.Messag
 }
 
 func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan types.MessageEnvelope) (bootstrap.Deferred, error) {
-	logger := trigger.sdkTriggerConfig.Logger
+	logger := trigger.edgeXConfig.Logger
 
 	trigger.context, trigger.cancel = context.WithCancel(ctx)
 
-	cfg := trigger.edgexWatermillConfig.WatermillTrigger
+	cfg := trigger.watermillConfig.WatermillTrigger
 
 	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.Type))
 
@@ -187,14 +187,14 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, tc interfaces.TriggerConfig, messageClientConfig *WatermillConfigWrapper) interfaces.Trigger {
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format MessageFormat, watermillConfig *WatermillConfigWrapper, edgeXConfig interfaces.TriggerConfig) interfaces.Trigger {
 	return &watermillTrigger{
-		pub:                  publisher,
-		sub:                  subscriber,
-		sdkTriggerConfig:     tc,
-		edgexWatermillConfig: messageClientConfig,
-		marshaler:            format.marshal,
-		unmarshaler:          format.unmarshal,
+		pub:             publisher,
+		sub:             subscriber,
+		watermillConfig: watermillConfig,
+		edgeXConfig:     edgeXConfig,
+		marshaler:       format.marshal,
+		unmarshaler:     format.unmarshal,
 	}
 }
 

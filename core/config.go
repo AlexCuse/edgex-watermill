@@ -10,7 +10,7 @@ type WatermillConfig struct {
 	ClientId        string
 	SubscribeTopics string
 	PublishTopic    string
-	WatermillFormat string
+	WireFormat      string
 	ConsumerGroup   string
 	Optional        map[string]string
 }
@@ -22,7 +22,7 @@ func (w *WatermillConfigWrapper) UpdateFromRaw(rawConfig interface{}) bool {
 		return false
 	}
 
-	*w = *rec
+	w.WatermillTrigger = rec.WatermillTrigger
 
 	return true
 }

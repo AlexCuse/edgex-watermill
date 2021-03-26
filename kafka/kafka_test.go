@@ -32,7 +32,7 @@ func TestKafkaConsumerConfig(t *testing.T) {
 		BrokerUrl:       uuid.NewString(),
 		SubscribeTopics: uuid.NewString(),
 		PublishTopic:    uuid.NewString(),
-		WatermillFormat: uuid.NewString(),
+		WireFormat:      uuid.NewString(),
 		ConsumerGroup:   uuid.NewString(),
 		Optional:        nil,
 	}
