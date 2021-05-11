@@ -29,7 +29,6 @@ import (
 
 func TestEdgeXWireFormat_JSON_Marshal(t *testing.T) {
 	env := types.MessageEnvelope{
-		Checksum:      uuid.New().String(),
 		CorrelationID: uuid.New().String(),
 		Payload:       []byte(`{ "S": "OK" }`),
 		ContentType:   clients.ContentTypeJSON,
@@ -49,7 +48,6 @@ func TestEdgeXWireFormat_JSON_Marshal(t *testing.T) {
 	require.Equal(t, env.CorrelationID, msg.UUID, "need an ID")
 	require.Equal(t, env.CorrelationID, msg.Metadata.Get(middleware.CorrelationIDMetadataKey), "keep correlation ID for middleware routing if needed")
 	require.Zero(t, msg.Metadata.Get(EdgeXContentType), "dont use metadata for edgex format")
-	require.Zero(t, msg.Metadata.Get(EdgeXChecksum), "dont use metadata for edgex format")
 }
 
 func TestEdgeXWireFormat_JSON_Unmarshal(t *testing.T) {

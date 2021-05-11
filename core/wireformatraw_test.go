@@ -28,7 +28,6 @@ import (
 
 func TestRawMessageFormat_Marshal_HasCorrelationID(t *testing.T) {
 	env := types.MessageEnvelope{
-		Checksum:      uuid.New().String(),
 		CorrelationID: uuid.New().String(),
 		Payload:       []byte("OK"),
 		ContentType:   uuid.New().String(),
@@ -46,12 +45,10 @@ func TestRawMessageFormat_Marshal_HasCorrelationID(t *testing.T) {
 	require.Equal(t, env.CorrelationID, msg.UUID, "should use correlation ID as watermill message ID")
 	require.Equal(t, env.CorrelationID, msg.Metadata.Get(middleware.CorrelationIDMetadataKey), "should use correlation ID as correlation ID for watermill router middleware")
 	require.Equal(t, env.ContentType, msg.Metadata.Get(EdgeXContentType), "should store content type in metadata")
-	require.Equal(t, env.Checksum, msg.Metadata.Get(EdgeXChecksum), "should store checksum in metadata")
 }
 
 func TestRawMessageFormat_Marshal_NoCorrelationId(t *testing.T) {
 	env := types.MessageEnvelope{
-		Checksum:      uuid.New().String(),
 		CorrelationID: "",
 		Payload:       []byte("OK"),
 		ContentType:   uuid.New().String(),
@@ -69,18 +66,15 @@ func TestRawMessageFormat_Marshal_NoCorrelationId(t *testing.T) {
 	require.NotZero(t, msg.UUID, "should set an arbitrary correlation ID / UUID if none provided")
 	require.Equal(t, msg.UUID, msg.Metadata.Get(middleware.CorrelationIDMetadataKey), "UUID and correlation ID should match")
 	require.Equal(t, env.ContentType, msg.Metadata.Get(EdgeXContentType), "should store content type in metadata")
-	require.Equal(t, env.Checksum, msg.Metadata.Get(EdgeXChecksum), "should store checksum in metadata")
 }
 
 func TestRawMessageFormat_Unmarshal_HasCorrelationId(t *testing.T) {
 	correlationID := uuid.New().String()
 	contentType := uuid.New().String()
-	checksum := uuid.New().String()
 
 	msg := message.NewMessage(uuid.New().String(), []byte("OK"))
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 	msg.Metadata.Set(EdgeXContentType, contentType)
-	msg.Metadata.Set(EdgeXChecksum, checksum)
 
 	sut := RawWireFormat{}
 
@@ -90,7 +84,6 @@ func TestRawMessageFormat_Unmarshal_HasCorrelationId(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, checksum, env.Checksum, "should include checksum if passed in metadata")
 	require.Equal(t, contentType, env.ContentType, "should include content type if passed in metadata")
 }
 
@@ -111,17 +104,14 @@ func TestRawMessageFormat_Unmarshal_HasMessageID(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, messageID, env.CorrelationID, "should use watermill message ID as correlation ID if not present in metadata")
-	require.Equal(t, checksum, env.Checksum, "should include checksum if passed in metadata")
 	require.Equal(t, contentType, env.ContentType, "should include content type if passed in metadata")
 }
 
 func TestRawMessageFormat_Marshal_HasNoID(t *testing.T) {
 	contentType := uuid.New().String()
-	checksum := uuid.New().String()
 
 	msg := message.NewMessage("", []byte("OK"))
 	msg.Metadata.Set(EdgeXContentType, contentType)
-	msg.Metadata.Set(EdgeXChecksum, checksum)
 
 	sut := RawWireFormat{}
 
@@ -131,17 +121,14 @@ func TestRawMessageFormat_Marshal_HasNoID(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.NotZero(t, env.CorrelationID, "should use assign correlation ID if not present in metadata or watermill message ID")
-	require.Equal(t, checksum, env.Checksum, "should include checksum if passed in metadata")
 	require.Equal(t, contentType, env.ContentType, "should include content type if passed in metadata")
 }
 
 func TestRawMessageFormat_Unmarshal_InfersCBORByDefault(t *testing.T) {
 	correlationID := uuid.New().String()
-	checksum := uuid.New().String()
 
 	msg := message.NewMessage(uuid.New().String(), []byte("OK"))
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
-	msg.Metadata.Set(EdgeXChecksum, checksum)
 
 	sut := RawWireFormat{}
 
@@ -151,17 +138,14 @@ func TestRawMessageFormat_Unmarshal_InfersCBORByDefault(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, checksum, env.Checksum, "should include checksum if passed in metadata")
 	require.Equal(t, clients.ContentTypeCBOR, env.ContentType, "should include content type if passed in metadata")
 }
 
 func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
 	correlationID := uuid.New().String()
-	checksum := uuid.New().String()
 
 	msg := message.NewMessage(uuid.New().String(), []byte("{OK"))
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
-	msg.Metadata.Set(EdgeXChecksum, checksum)
 
 	sut := RawWireFormat{}
 
@@ -171,17 +155,14 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, checksum, env.Checksum, "should include checksum if passed in metadata")
 	require.Equal(t, clients.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
 }
 
 func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
 	correlationID := uuid.New().String()
-	checksum := uuid.New().String()
 
 	msg := message.NewMessage(uuid.New().String(), []byte("[OK"))
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
-	msg.Metadata.Set(EdgeXChecksum, checksum)
 
 	sut := RawWireFormat{}
 
@@ -191,6 +172,5 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, checksum, env.Checksum, "should include checksum if passed in metadata")
 	require.Equal(t, clients.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
 }

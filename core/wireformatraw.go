@@ -35,7 +35,6 @@ func (*RawWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message,
 
 	m := message.NewMessage(correlationID, envelope.Payload)
 
-	m.Metadata.Set(EdgeXChecksum, envelope.Checksum)
 	m.Metadata.Set(EdgeXContentType, envelope.ContentType)
 	m.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
 
@@ -53,8 +52,6 @@ func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, er
 		correlationID = uuid.New().String()
 	}
 
-	checksum := msg.Metadata.Get(EdgeXChecksum)
-
 	contentType := msg.Metadata.Get(EdgeXContentType)
 
 	if contentType == "" {
@@ -69,7 +66,6 @@ func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, er
 		Payload:       msg.Payload,
 		CorrelationID: correlationID,
 		ContentType:   contentType,
-		Checksum:      checksum,
 	}
 	return formattedMessage, nil
 }
