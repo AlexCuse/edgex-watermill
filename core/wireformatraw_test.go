@@ -19,7 +19,7 @@ package core
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -138,7 +138,7 @@ func TestRawMessageFormat_Unmarshal_InfersCBORByDefault(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, clients.ContentTypeCBOR, env.ContentType, "should include content type if passed in metadata")
+	require.Equal(t, common.ContentTypeCBOR, env.ContentType, "should include content type if passed in metadata")
 }
 
 func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
@@ -155,7 +155,7 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForObject(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, clients.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
+	require.Equal(t, common.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
 }
 
 func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
@@ -172,5 +172,5 @@ func TestRawMessageFormat_Unmarshal_InfersJSONForArray(t *testing.T) {
 
 	require.Equal(t, string(msg.Payload), string(env.Payload), "should properly pass payload")
 	require.Equal(t, correlationID, env.CorrelationID, "should read correlation ID from metadata if present")
-	require.Equal(t, clients.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
+	require.Equal(t, common.ContentTypeJSON, env.ContentType, "should include content type if passed in metadata")
 }

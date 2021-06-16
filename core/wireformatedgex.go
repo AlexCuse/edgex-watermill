@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/fxamacker/cbor/v2"
 )
@@ -33,9 +33,9 @@ func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope) (*message.Messag
 
 	//TODO: worth covering other content types?
 	//is eg. CBOR in JSON envelope something we want to support?
-	if envelope.ContentType == clients.ContentTypeJSON {
+	if envelope.ContentType == common.ContentTypeJSON {
 		pl, err = json.Marshal(envelope)
-	} else if envelope.ContentType == clients.ContentTypeCBOR {
+	} else if envelope.ContentType == common.ContentTypeCBOR {
 		pl, err = cbor.Marshal(envelope)
 	}
 

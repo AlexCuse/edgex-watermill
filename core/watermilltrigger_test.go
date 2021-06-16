@@ -126,7 +126,7 @@ func TestBackground_MarshalError(t *testing.T) {
 
 	sut := watermillTrigger{marshaler: marshaler.Execute}
 
-	err := sut.background(topic, env)
+	err := sut.background(MockBackgroundMessage{env, topic})
 
 	require.Error(t, err)
 }
@@ -151,7 +151,7 @@ func TestBackground_PublishError(t *testing.T) {
 
 	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
-	err := sut.background(topic, env)
+	err := sut.background(MockBackgroundMessage{env, topic})
 
 	require.Error(t, err)
 }
@@ -175,7 +175,7 @@ func TestBackground(t *testing.T) {
 
 	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 
-	err := sut.background(topic, env)
+	err := sut.background(MockBackgroundMessage{env, topic})
 
 	require.NoError(t, err)
 
@@ -184,4 +184,17 @@ func TestBackground(t *testing.T) {
 	msg, ok := pub.Calls[0].Arguments[1].(*message.Message)
 	require.True(t, ok)
 	require.Equal(t, &marshaled, msg)
+}
+
+type MockBackgroundMessage struct {
+	env types.MessageEnvelope
+	topic string
+}
+
+func (bm MockBackgroundMessage) Message() types.MessageEnvelope {
+	return bm.env
+}
+
+func (bm MockBackgroundMessage) Topic() string {
+	return bm.topic
 }

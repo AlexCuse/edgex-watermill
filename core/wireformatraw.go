@@ -19,7 +19,7 @@ package core
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/google/uuid"
 )
@@ -56,9 +56,9 @@ func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, er
 
 	if contentType == "" {
 		if msg.Payload[0] == byte('{') || msg.Payload[0] == byte('[') {
-			contentType = clients.ContentTypeJSON
+			contentType = common.ContentTypeJSON
 		} else {
-			contentType = clients.ContentTypeCBOR
+			contentType = common.ContentTypeCBOR
 		}
 	}
 

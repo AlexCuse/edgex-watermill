@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -31,7 +31,7 @@ func TestEdgeXWireFormat_JSON_Marshal(t *testing.T) {
 	env := types.MessageEnvelope{
 		CorrelationID: uuid.New().String(),
 		Payload:       []byte(`{ "S": "OK" }`),
-		ContentType:   clients.ContentTypeJSON,
+		ContentType:   common.ContentTypeJSON,
 	}
 
 	jsn, _ := json.Marshal(env)

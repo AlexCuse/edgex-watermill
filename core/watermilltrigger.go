@@ -7,7 +7,7 @@ import (
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/util"
 	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients"
+	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"strings"
 	"sync"
@@ -38,7 +38,7 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 
 	edgexContext := trigger.edgeXConfig.ContextBuilder(msg)
 
-	logger.Trace("Received message", "topic", receiveTopic, clients.CorrelationHeader, edgexContext.CorrelationID)
+	logger.Trace("Received message", "topic", receiveTopic, common.CorrelationHeader, edgexContext.CorrelationID)
 
 	err = trigger.edgeXConfig.MessageProcessor(edgexContext, msg)
 
@@ -80,19 +80,19 @@ func (trigger *watermillTrigger) output(publishTopic string, ctx interfaces.AppF
 			return err
 		}
 
-		logger.Trace("Published message to trigger output", "topic", publishTopic, clients.CorrelationHeader, ctx.CorrelationID)
+		logger.Trace("Published message to trigger output", "topic", publishTopic, common.CorrelationHeader, ctx.CorrelationID)
 	}
 	return nil
 }
 
-func (trigger *watermillTrigger) background(publishTopic string, bg types.MessageEnvelope) error {
-	msg, err := trigger.marshaler(bg)
+func (trigger *watermillTrigger) background(bg interfaces.BackgroundMessage) error {
+	msg, err := trigger.marshaler(bg.Message())
 
 	if err != nil {
 		return err
 	}
 
-	err = trigger.pub.Publish(publishTopic, msg)
+	err = trigger.pub.Publish(bg.Topic(), msg)
 
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (trigger *watermillTrigger) background(publishTopic string, bg types.Messag
 	return nil
 }
 
-func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan types.MessageEnvelope) (bootstrap.Deferred, error) {
+func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan interfaces.BackgroundMessage) (bootstrap.Deferred, error) {
 	logger := trigger.edgeXConfig.Logger
 
 	trigger.context, trigger.cancel = context.WithCancel(ctx)
@@ -160,7 +160,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 			case bg := <-background:
 				go func(pubTopic string) {
-					trigger.background(pubTopic, bg)
+					trigger.background(bg)
 				}(cfg.PublishTopic)
 
 			}
