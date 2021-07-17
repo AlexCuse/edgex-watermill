@@ -8,10 +8,10 @@ require (
 	github.com/ThreeDotsLabs/watermill-amqp v1.1.0
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0
 	github.com/ThreeDotsLabs/watermill-nats v1.0.5
-	github.com/edgexfoundry/app-functions-sdk-go/v2 v2.0.0-dev.82
-	github.com/edgexfoundry/go-mod-bootstrap/v2 v2.0.0-dev.66
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0-dev.100
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.0-dev.16
+	github.com/edgexfoundry/app-functions-sdk-go/v2 v2.0.0
+	github.com/edgexfoundry/go-mod-bootstrap/v2 v2.0.0
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.0
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.1
 	github.com/fxamacker/cbor/v2 v2.2.0
 	github.com/google/uuid v1.2.0
 	github.com/hashicorp/go-multierror v1.1.0
