@@ -25,10 +25,12 @@ type watermillTrigger struct {
 	edgeXConfig     interfaces.TriggerConfig
 }
 
-func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string, publishTopic string) {
+func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string) {
 	logger := trigger.edgeXConfig.Logger
 
 	msg, err := trigger.unmarshaler(watermillMessage)
+
+	msg.ReceivedTopic = receiveTopic
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to unmarshal message: %s", err.Error()))
@@ -40,7 +42,8 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 
 	logger.Trace("Received message", "topic", receiveTopic, common.CorrelationHeader, edgexContext.CorrelationID)
 
-	err = trigger.edgeXConfig.MessageProcessor(edgexContext, msg)
+	//collect errors, consider failure if *any* pipeline fails on output
+	err = trigger.edgeXConfig.MessageReceived(edgexContext, msg, trigger.output)
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to process message: %s", err.Error()))
@@ -48,18 +51,10 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 		return
 	}
 
-	err = trigger.output(publishTopic, edgexContext)
-
-	if err != nil {
-		logger.Error(fmt.Sprintf("Trigger failed to publish output: %v", err))
-		watermillMessage.Nack() // if it was processed but not published ack might be appropriate?
-		return
-	}
-
 	watermillMessage.Ack()
 }
 
-func (trigger *watermillTrigger) output(publishTopic string, ctx interfaces.AppFunctionContext) error {
+func (trigger *watermillTrigger) output(ctx interfaces.AppFunctionContext, pipeline *interfaces.FunctionPipeline) error {
 	logger := ctx.LoggingClient()
 
 	output := ctx.ResponseData()
@@ -74,13 +69,15 @@ func (trigger *watermillTrigger) output(publishTopic string, ctx interfaces.AppF
 			return err
 		}
 
+		publishTopic := trigger.watermillConfig.WatermillTrigger.PublishTopic
+
 		err = trigger.pub.Publish(publishTopic, msg)
 
 		if err != nil {
 			return err
 		}
 
-		logger.Trace("Published message to trigger output", "topic", publishTopic, common.CorrelationHeader, ctx.CorrelationID)
+		logger.Tracef("Published message to trigger output in pipeline %s (%s: %s, %s: %s)", pipeline.Id, "topic", publishTopic, common.CorrelationHeader, ctx.CorrelationID)
 	}
 	return nil
 }
@@ -139,9 +136,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 					return
 
 				case m := <-collectFrom:
-					go func(pubTopic string) {
-						trigger.input(m, t, pubTopic)
-					}(cfg.PublishTopic)
+					go trigger.input(m, t)
 
 				}
 			}
@@ -159,9 +154,7 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 				return
 
 			case bg := <-background:
-				go func(pubTopic string) {
-					trigger.background(bg)
-				}(cfg.PublishTopic)
+				go trigger.background(bg)
 
 			}
 		}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg"
+	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
 	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ import (
 func TestOutput_NilOutputData(t *testing.T) {
 	sut := watermillTrigger{}
 
-	err := sut.output("", pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{}))
+	err := sut.output(pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{}), nil)
 
 	require.NoError(t, err)
 }
@@ -27,7 +28,7 @@ func TestOutput_NilPub(t *testing.T) {
 	ctx := pkg.NewAppFuncContextForTest(uuid.NewString(), logger.MockLogger{})
 	ctx.SetResponseData([]byte("OK"))
 
-	err := sut.output("", ctx)
+	err := sut.output(ctx, &interfaces.FunctionPipeline{})
 
 	require.NoError(t, err)
 }
@@ -46,9 +47,9 @@ func TestOutput_MarshalError(t *testing.T) {
 		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
 	})).Return(msg, errors.New(""))
 
-	sut := watermillTrigger{marshaler: marshaler.Execute, pub: &mockPublisher{}}
+	sut := watermillTrigger{marshaler: marshaler.Execute, pub: &mockPublisher{}, watermillConfig: &WatermillConfigWrapper{WatermillTrigger: WatermillConfig{PublishTopic: topic}}}
 
-	err := sut.output(topic, ctx)
+	err := sut.output(ctx, &interfaces.FunctionPipeline{})
 
 	require.Error(t, err)
 }
@@ -70,9 +71,9 @@ func TestOutput_PublishError(t *testing.T) {
 	pub := mockPublisher{}
 	pub.On("Publish", topic, msg).Return(errors.New(""))
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
+	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute, watermillConfig: &WatermillConfigWrapper{WatermillTrigger: WatermillConfig{PublishTopic: topic}}}
 
-	err := sut.output(topic, ctx)
+	err := sut.output(ctx, &interfaces.FunctionPipeline{})
 
 	require.Error(t, err)
 }
@@ -93,11 +94,11 @@ func TestOutput(t *testing.T) {
 		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
 	})).Return(&marshaled, nil)
 
-	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
+	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute, watermillConfig: &WatermillConfigWrapper{WatermillTrigger: WatermillConfig{PublishTopic: topic}}}
 
-	err := sut.output(topic, ctx)
+	err := sut.output(ctx, &interfaces.FunctionPipeline{})
 
-	require.NoError(t, err)
+	require.NoError(t, err, nil)
 
 	require.Equal(t, 1, len(marshaler.Calls))
 	require.Equal(t, ctx.CorrelationID(), marshaler.Calls[0].Arguments[0].(types.MessageEnvelope).CorrelationID)
@@ -187,7 +188,7 @@ func TestBackground(t *testing.T) {
 }
 
 type MockBackgroundMessage struct {
-	env types.MessageEnvelope
+	env   types.MessageEnvelope
 	topic string
 }
 

@@ -70,7 +70,7 @@ func Subscriber(config ewm.WatermillConfig) (message.Subscriber, error) {
 		InitializeTimeout:                0,
 		ReceiveSettings:                  pubsub.ReceiveSettings{},
 		SubscriptionConfig:               pubsub.SubscriptionConfig{},
-		ClientOptions:                   nil,
+		ClientOptions:                    nil,
 		Unmarshaler:                      nil,
 	}, watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }

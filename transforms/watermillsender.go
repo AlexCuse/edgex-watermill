@@ -8,12 +8,12 @@ import (
 )
 
 type watermillSender struct {
-	pub message.Publisher
+	pub              message.Publisher
 	baseTopic        string
 	continuePipeline bool
 }
 
-func NewWatermillSender() *watermillSender  {
+func NewWatermillSender() *watermillSender {
 	return &watermillSender{}
 }
 
