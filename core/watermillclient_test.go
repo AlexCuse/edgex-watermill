@@ -30,7 +30,7 @@ import (
 func TestNewWatermillClient(t *testing.T) {
 	format := &RawWireFormat{}
 
-	client, err := NewWatermillClient(context.Background(), nil, nil, format)
+	client, err := NewWatermillClient(context.Background(), nil, nil, format, nil)
 
 	require.Nil(t, err, "should not return error")
 	require.NotNil(t, client, "should return initialized client")
@@ -39,7 +39,7 @@ func TestNewWatermillClient(t *testing.T) {
 }
 
 func TestNewWatermillClient_Default_EdgexJSON(t *testing.T) {
-	client, err := NewWatermillClient(context.Background(), nil, nil, nil)
+	client, err := NewWatermillClient(context.Background(), nil, nil, nil, nil)
 
 	require.Nil(t, err, "should not return error")
 	require.NotNil(t, client, "should return initialized client")
@@ -56,11 +56,11 @@ func TestPublish(t *testing.T) {
 	publisher.On("Publish", topic, marshaled).Return(nil)
 
 	marshaler := mockMarshaler{}
-	marshaler.On("Execute", payload).Return(marshaled, nil)
+	marshaler.On("Execute", payload, mock.AnythingOfType("core.binaryModifier")).Return(marshaled, nil)
 
 	client, err := newWatermillClientWithOptions(context.Background(), &publisher, nil, WatermillClientOptions{
 		Marshaler: marshaler.Execute,
-	})
+	}, nil)
 
 	require.Nil(t, err, "should initialize client")
 
@@ -96,7 +96,7 @@ func TestSubscribe(t *testing.T) {
 
 	client, err := newWatermillClientWithOptions(ctx, nil, &subscriber, WatermillClientOptions{
 		Unmarshaler: unmarshaler.Execute,
-	})
+	}, nil)
 
 	require.NoError(t, err, "should initialize client")
 

@@ -98,12 +98,12 @@ type mockMarshaler struct {
 }
 
 // Execute provides a mock function with given fields: envelope
-func (_m *mockMarshaler) Execute(envelope types.MessageEnvelope) (*message.Message, error) {
-	ret := _m.Called(envelope)
+func (_m *mockMarshaler) Execute(envelope types.MessageEnvelope, enc binaryModifier) (*message.Message, error) {
+	ret := _m.Called(envelope, enc)
 
 	var r0 *message.Message
-	if rf, ok := ret.Get(0).(func(types.MessageEnvelope) *message.Message); ok {
-		r0 = rf(envelope)
+	if rf, ok := ret.Get(0).(func(types.MessageEnvelope, binaryModifier) *message.Message); ok {
+		r0 = rf(envelope, enc)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*message.Message)
@@ -111,8 +111,8 @@ func (_m *mockMarshaler) Execute(envelope types.MessageEnvelope) (*message.Messa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(types.MessageEnvelope) error); ok {
-		r1 = rf(envelope)
+	if rf, ok := ret.Get(1).(func(types.MessageEnvelope, binaryModifier) error); ok {
+		r1 = rf(envelope, enc)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -126,19 +126,19 @@ type mockUnmarshaler struct {
 }
 
 // Execute provides a mock function with given fields: _a0
-func (_m *mockUnmarshaler) Execute(_a0 *message.Message) (types.MessageEnvelope, error) {
-	ret := _m.Called(_a0)
+func (_m *mockUnmarshaler) Execute(msg *message.Message, dec binaryModifier) (types.MessageEnvelope, error) {
+	ret := _m.Called(msg, dec)
 
 	var r0 types.MessageEnvelope
-	if rf, ok := ret.Get(0).(func(*message.Message) types.MessageEnvelope); ok {
-		r0 = rf(_a0)
+	if rf, ok := ret.Get(0).(func(*message.Message, binaryModifier) types.MessageEnvelope); ok {
+		r0 = rf(msg, dec)
 	} else {
 		r0 = ret.Get(0).(types.MessageEnvelope)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*message.Message) error); ok {
-		r1 = rf(_a0)
+	if rf, ok := ret.Get(1).(func(*message.Message, binaryModifier) error); ok {
+		r1 = rf(msg, dec)
 	} else {
 		r1 = ret.Error(1)
 	}

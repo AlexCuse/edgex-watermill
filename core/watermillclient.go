@@ -30,6 +30,8 @@ type watermillClient struct {
 	context     context.Context
 	marshaler   WatermillMarshaler
 	unmarshaler WatermillUnmarshaler
+	decryptor   binaryModifier
+	encryptor   binaryModifier
 }
 
 const (
@@ -42,7 +44,7 @@ func (c *watermillClient) Connect() error {
 }
 
 func (c *watermillClient) Publish(env types.MessageEnvelope, topic string) error {
-	m, err := c.marshaler(env)
+	m, err := c.marshaler(env, c.encryptor)
 
 	if err != nil {
 		return err
@@ -70,7 +72,7 @@ func (c *watermillClient) Subscribe(topics []types.TopicChannel, messageErrors c
 				case <-ctx.Done():
 					return
 				case msg := <-sub:
-					formattedMessage, err := c.unmarshaler(msg)
+					formattedMessage, err := c.unmarshaler(msg, c.decryptor)
 
 					if err != nil {
 						//TODO: can we get message errors from watermill Subscriber as well?  May need to wire in differently
@@ -96,7 +98,7 @@ func (c *watermillClient) Disconnect() error {
 	return result
 }
 
-func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format WireFormat) (messaging.MessageClient, error) {
+func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.Subscriber, format WireFormat, watermillConfig *WatermillConfig) (messaging.MessageClient, error) {
 	if format == nil {
 		format = &EdgeXWireFormat{}
 	}
@@ -104,7 +106,7 @@ func NewWatermillClient(ctx context.Context, pub message.Publisher, sub message.
 	return newWatermillClientWithOptions(ctx, pub, sub, WatermillClientOptions{
 		Marshaler:   format.marshal,
 		Unmarshaler: format.unmarshal,
-	})
+	}, watermillConfig)
 }
 
 type WatermillClientOptions struct {
@@ -112,14 +114,27 @@ type WatermillClientOptions struct {
 	Unmarshaler WatermillUnmarshaler
 }
 
-func newWatermillClientWithOptions(ctx context.Context, pub message.Publisher, sub message.Subscriber, opt WatermillClientOptions) (messaging.MessageClient, error) {
+func newWatermillClientWithOptions(ctx context.Context, pub message.Publisher, sub message.Subscriber, opt WatermillClientOptions, config *WatermillConfig) (messaging.MessageClient, error) {
 	client := &watermillClient{
 		pub:         pub,
 		sub:         sub,
 		context:     ctx,
 		marshaler:   opt.Marshaler,
 		unmarshaler: opt.Unmarshaler,
+		encryptor:   noopModifier,
+		decryptor:   noopModifier,
 	}
 
-	return client, nil
+	var err error
+
+	if config != nil {
+		protection, err := newAESProtection(config)
+
+		if err == nil && protection != nil { // else err is going to be returned
+			client.encryptor = protection.encrypt
+			client.decryptor = protection.decrypt
+		}
+	}
+
+	return client, err
 }

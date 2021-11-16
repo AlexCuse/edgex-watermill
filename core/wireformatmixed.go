@@ -23,20 +23,20 @@ import (
 
 type RawInputWireFormat struct{}
 
-func (*RawInputWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
-	return (&EdgeXWireFormat{}).marshal(envelope)
+func (*RawInputWireFormat) marshal(envelope types.MessageEnvelope, encryptor binaryModifier) (*message.Message, error) {
+	return (&EdgeXWireFormat{}).marshal(envelope, encryptor)
 }
 
-func (*RawInputWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
-	return (&RawWireFormat{}).unmarshal(msg)
+func (*RawInputWireFormat) unmarshal(msg *message.Message, decryptor binaryModifier) (types.MessageEnvelope, error) {
+	return (&RawWireFormat{}).unmarshal(msg, decryptor)
 }
 
 type RawOutputWireFormat struct{}
 
-func (*RawOutputWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
-	return (&RawWireFormat{}).marshal(envelope)
+func (*RawOutputWireFormat) marshal(envelope types.MessageEnvelope, encryptor binaryModifier) (*message.Message, error) {
+	return (&RawWireFormat{}).marshal(envelope, encryptor)
 }
 
-func (*RawOutputWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
-	return (&EdgeXWireFormat{}).unmarshal(msg)
+func (*RawOutputWireFormat) unmarshal(msg *message.Message, decryptor binaryModifier) (types.MessageEnvelope, error) {
+	return (&EdgeXWireFormat{}).unmarshal(msg, decryptor)
 }

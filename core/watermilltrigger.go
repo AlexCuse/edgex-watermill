@@ -1,3 +1,19 @@
+//
+// Copyright (c) 2021 Alex Ullrich
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package core
 
 import (
@@ -18,6 +34,8 @@ type watermillTrigger struct {
 	sub             message.Subscriber
 	marshaler       WatermillMarshaler
 	unmarshaler     WatermillUnmarshaler
+	encryptor       binaryModifier
+	decryptor       binaryModifier
 	topics          []string
 	context         context.Context
 	cancel          context.CancelFunc
@@ -25,10 +43,10 @@ type watermillTrigger struct {
 	edgeXConfig     interfaces.TriggerConfig
 }
 
-func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string) {
-	logger := trigger.edgeXConfig.Logger
+func (t *watermillTrigger) input(watermillMessage *message.Message, receiveTopic string) {
+	logger := t.edgeXConfig.Logger
 
-	msg, err := trigger.unmarshaler(watermillMessage)
+	msg, err := t.unmarshaler(watermillMessage, t.decryptor)
 
 	msg.ReceivedTopic = receiveTopic
 
@@ -38,12 +56,12 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 		return
 	}
 
-	edgexContext := trigger.edgeXConfig.ContextBuilder(msg)
+	edgexContext := t.edgeXConfig.ContextBuilder(msg)
 
 	logger.Trace("Received message", "topic", receiveTopic, common.CorrelationHeader, edgexContext.CorrelationID)
 
 	//collect errors, consider failure if *any* pipeline fails on output
-	err = trigger.edgeXConfig.MessageReceived(edgexContext, msg, trigger.output)
+	err = t.edgeXConfig.MessageReceived(edgexContext, msg, t.output)
 
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to process message: %s", err.Error()))
@@ -54,42 +72,53 @@ func (trigger *watermillTrigger) input(watermillMessage *message.Message, receiv
 	watermillMessage.Ack()
 }
 
-func (trigger *watermillTrigger) output(ctx interfaces.AppFunctionContext, pipeline *interfaces.FunctionPipeline) error {
+func (t *watermillTrigger) output(ctx interfaces.AppFunctionContext, pipeline *interfaces.FunctionPipeline) error {
 	logger := ctx.LoggingClient()
 
 	output := ctx.ResponseData()
-	if output != nil && trigger.pub != nil {
-		msg, err := trigger.marshaler(types.MessageEnvelope{
+	if output != nil && t.pub != nil {
+		var err error
+		pl := output
+
+		if t.encryptor != nil {
+			pl, err = t.encryptor(output)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		msg, err := t.marshaler(types.MessageEnvelope{
 			CorrelationID: ctx.CorrelationID(),
-			Payload:       output,
+			Payload:       pl,
 			ContentType:   ctx.ResponseContentType(),
-		})
+		}, t.encryptor)
 
 		if err != nil {
 			return err
 		}
 
-		publishTopic := trigger.watermillConfig.WatermillTrigger.PublishTopic
+		publishTopic := t.watermillConfig.WatermillTrigger.PublishTopic
 
-		err = trigger.pub.Publish(publishTopic, msg)
+		err = t.pub.Publish(publishTopic, msg)
 
 		if err != nil {
 			return err
 		}
 
-		logger.Tracef("Published message to trigger output in pipeline %s (%s: %s, %s: %s)", pipeline.Id, "topic", publishTopic, common.CorrelationHeader, ctx.CorrelationID)
+		logger.Tracef("Published message to t output in pipeline %s (%s: %s, %s: %s)", pipeline.Id, "topic", publishTopic, common.CorrelationHeader, ctx.CorrelationID)
 	}
 	return nil
 }
 
-func (trigger *watermillTrigger) background(bg interfaces.BackgroundMessage) error {
-	msg, err := trigger.marshaler(bg.Message())
+func (t *watermillTrigger) background(bg interfaces.BackgroundMessage) error {
+	msg, err := t.marshaler(bg.Message(), t.encryptor)
 
 	if err != nil {
 		return err
 	}
 
-	err = trigger.pub.Publish(bg.Topic(), msg)
+	err = t.pub.Publish(bg.Topic(), msg)
 
 	if err != nil {
 		return err
@@ -98,29 +127,29 @@ func (trigger *watermillTrigger) background(bg interfaces.BackgroundMessage) err
 	return nil
 }
 
-func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan interfaces.BackgroundMessage) (bootstrap.Deferred, error) {
-	logger := trigger.edgeXConfig.Logger
+func (t *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, background <-chan interfaces.BackgroundMessage) (bootstrap.Deferred, error) {
+	logger := t.edgeXConfig.Logger
 
-	trigger.context, trigger.cancel = context.WithCancel(ctx)
+	t.context, t.cancel = context.WithCancel(ctx)
 
-	cfg := trigger.watermillConfig.WatermillTrigger
+	cfg := t.watermillConfig.WatermillTrigger
 
-	logger.Info(fmt.Sprintf("Initializing trigger for '%s'", cfg.Type))
+	logger.Info(fmt.Sprintf("Initializing t for '%s'", cfg.Type))
 
 	logger.Info(fmt.Sprintf("Subscribing to topic: '%s' @ %s", cfg.SubscribeTopics, cfg.BrokerUrl))
 
 	if len(strings.TrimSpace(cfg.SubscribeTopics)) == 0 {
 		// Still allows subscribing to blank topic to receive all messages
-		trigger.topics = append(trigger.topics, cfg.SubscribeTopics)
+		t.topics = append(t.topics, cfg.SubscribeTopics)
 	} else {
 		topics := util.DeleteEmptyAndTrim(strings.FieldsFunc(cfg.SubscribeTopics, util.SplitComma))
 		for _, topic := range topics {
-			trigger.topics = append(trigger.topics, topic)
+			t.topics = append(t.topics, topic)
 		}
 	}
 
-	for _, topic := range trigger.topics {
-		tributary, err := trigger.sub.Subscribe(trigger.context, topic)
+	for _, topic := range t.topics {
+		tributary, err := t.sub.Subscribe(t.context, topic)
 
 		if err != nil {
 			return nil, err
@@ -128,15 +157,15 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 		wg.Add(1)
 
-		go func(waitgroup *sync.WaitGroup, collectFrom <-chan *message.Message, t string) {
+		go func(waitgroup *sync.WaitGroup, collectFrom <-chan *message.Message, topic string) {
 			defer waitgroup.Done()
 			for {
 				select {
-				case <-trigger.context.Done():
+				case <-t.context.Done():
 					return
 
 				case m := <-collectFrom:
-					go trigger.input(m, t)
+					go t.input(m, topic)
 
 				}
 			}
@@ -150,29 +179,29 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 
 		for {
 			select {
-			case <-trigger.context.Done():
+			case <-t.context.Done():
 				return
 
 			case bg := <-background:
-				go trigger.background(bg)
+				go t.background(bg)
 
 			}
 		}
 	}()
 
 	deferred := func() {
-		logger.Info("Disconnecting trigger")
-		if trigger.sub != nil {
-			err := trigger.sub.Close()
+		logger.Info("Disconnecting t")
+		if t.sub != nil {
+			err := t.sub.Close()
 			if err != nil {
-				logger.Error("Unable to disconnect trigger Subscriber", "error", err.Error())
+				logger.Error("Unable to disconnect t Subscriber", "error", err.Error())
 			}
 		}
 
-		if trigger.pub != nil {
-			err := trigger.pub.Close()
+		if t.pub != nil {
+			err := t.pub.Close()
 			if err != nil {
-				logger.Error("Unable to disconnect trigger Publisher", "error", err.Error())
+				logger.Error("Unable to disconnect t Publisher", "error", err.Error())
 			}
 		}
 	}
@@ -180,19 +209,34 @@ func (trigger *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Cont
 	return deferred, nil
 }
 
-func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format WireFormat, watermillConfig *WatermillConfigWrapper, edgeXConfig interfaces.TriggerConfig) interfaces.Trigger {
-	return &watermillTrigger{
+func NewWatermillTrigger(publisher message.Publisher, subscriber message.Subscriber, format WireFormat, watermillConfig *WatermillConfigWrapper, edgeXConfig interfaces.TriggerConfig) (interfaces.Trigger, error) {
+	t := &watermillTrigger{
 		pub:             publisher,
 		sub:             subscriber,
 		watermillConfig: watermillConfig,
 		edgeXConfig:     edgeXConfig,
 		marshaler:       format.marshal,
 		unmarshaler:     format.unmarshal,
+		encryptor:       noopModifier,
+		decryptor:       noopModifier,
 	}
+
+	var err error
+
+	if watermillConfig != nil {
+		protection, err := newAESProtection(&(watermillConfig.WatermillTrigger))
+
+		if err == nil && protection != nil { // else err is going to be returned
+			t.encryptor = protection.encrypt
+			t.decryptor = protection.decrypt
+		}
+	}
+
+	return t, err
 }
 
-func (trigger *watermillTrigger) Stop() {
-	if trigger.cancel != nil {
-		trigger.cancel()
+func (t *watermillTrigger) Stop() {
+	if t.cancel != nil {
+		t.cancel()
 	}
 }

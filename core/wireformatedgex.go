@@ -25,9 +25,11 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-type EdgeXWireFormat struct{}
+type EdgeXWireFormat struct {
+	protection dataProtection
+}
 
-func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope, encrypt binaryModifier) (*message.Message, error) {
 	var pl []byte
 	var err error
 
@@ -43,6 +45,14 @@ func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope) (*message.Messag
 		return nil, err
 	}
 
+	if encrypt != nil {
+		pl, err = encrypt(pl)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	msg := message.NewMessage(envelope.CorrelationID, pl)
 
 	msg.Metadata.Set(middleware.CorrelationIDMetadataKey, envelope.CorrelationID)
@@ -50,18 +60,28 @@ func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope) (*message.Messag
 	return msg, nil
 }
 
-func (*EdgeXWireFormat) unmarshal(message *message.Message) (types.MessageEnvelope, error) {
+func (*EdgeXWireFormat) unmarshal(message *message.Message, decrypt binaryModifier) (types.MessageEnvelope, error) {
 
 	var err error
 
 	env := types.MessageEnvelope{}
 
+	pl := message.Payload
+
+	if decrypt != nil {
+		pl, err = decrypt(pl)
+	}
+
+	if err != nil {
+		return env, err
+	}
+
 	//TODO: worth covering other content types?
 	//is eg. CBOR in JSON envelope something we want to support?
-	if message.Payload[0] == byte('{') || message.Payload[0] == byte('[') {
-		err = json.Unmarshal(message.Payload, &env)
+	if pl[0] == byte('{') || pl[0] == byte('[') {
+		err = json.Unmarshal(pl, &env)
 	} else {
-		err = cbor.Unmarshal(message.Payload, &env)
+		err = cbor.Unmarshal(pl, &env)
 	}
 
 	return env, err

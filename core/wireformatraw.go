@@ -26,14 +26,25 @@ import (
 
 type RawWireFormat struct{}
 
-func (*RawWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message, error) {
+func (*RawWireFormat) marshal(envelope types.MessageEnvelope, encrypt binaryModifier) (*message.Message, error) {
 	correlationID := envelope.CorrelationID
 
 	if correlationID == "" {
 		correlationID = uuid.New().String()
 	}
 
-	m := message.NewMessage(correlationID, envelope.Payload)
+	pl := envelope.Payload
+
+	if encrypt != nil {
+		var err error
+		pl, err = encrypt(pl)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	m := message.NewMessage(correlationID, pl)
 
 	m.Metadata.Set(EdgeXContentType, envelope.ContentType)
 	m.Metadata.Set(middleware.CorrelationIDMetadataKey, correlationID)
@@ -41,7 +52,7 @@ func (*RawWireFormat) marshal(envelope types.MessageEnvelope) (*message.Message,
 	return m, nil
 }
 
-func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, error) {
+func (*RawWireFormat) unmarshal(msg *message.Message, decrypt binaryModifier) (types.MessageEnvelope, error) {
 	correlationID := msg.Metadata.Get(middleware.CorrelationIDMetadataKey)
 
 	if correlationID == "" {
@@ -54,8 +65,20 @@ func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, er
 
 	contentType := msg.Metadata.Get(EdgeXContentType)
 
+	pl := msg.Payload
+
+	var err error
+
+	if decrypt != nil {
+		pl, err = decrypt(pl)
+	}
+
+	if err != nil {
+		return types.MessageEnvelope{}, err
+	}
+
 	if contentType == "" {
-		if msg.Payload[0] == byte('{') || msg.Payload[0] == byte('[') {
+		if pl[0] == byte('{') || pl[0] == byte('[') {
 			contentType = common.ContentTypeJSON
 		} else {
 			contentType = common.ContentTypeCBOR
@@ -63,7 +86,7 @@ func (*RawWireFormat) unmarshal(msg *message.Message) (types.MessageEnvelope, er
 	}
 
 	formattedMessage := types.MessageEnvelope{
-		Payload:       msg.Payload,
+		Payload:       pl,
 		CorrelationID: correlationID,
 		ContentType:   contentType,
 	}

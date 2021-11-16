@@ -22,10 +22,10 @@ import (
 )
 
 type WireFormat interface {
-	marshal(envelope types.MessageEnvelope) (*message.Message, error)
-	unmarshal(*message.Message) (types.MessageEnvelope, error)
+	marshal(envelope types.MessageEnvelope, encrypt binaryModifier) (*message.Message, error)
+	unmarshal(msg *message.Message, decrypt binaryModifier) (types.MessageEnvelope, error)
 }
 
-type WatermillMarshaler func(envelope types.MessageEnvelope) (*message.Message, error)
+type WatermillMarshaler func(envelope types.MessageEnvelope, encrypt binaryModifier) (*message.Message, error)
 
-type WatermillUnmarshaler func(*message.Message) (types.MessageEnvelope, error)
+type WatermillUnmarshaler func(msg *message.Message, decrypt binaryModifier) (types.MessageEnvelope, error)

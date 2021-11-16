@@ -45,7 +45,7 @@ func TestOutput_MarshalError(t *testing.T) {
 
 	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
 		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
-	})).Return(msg, errors.New(""))
+	}), mock.AnythingOfType("core.binaryModifier")).Return(msg, errors.New(""))
 
 	sut := watermillTrigger{marshaler: marshaler.Execute, pub: &mockPublisher{}, watermillConfig: &WatermillConfigWrapper{WatermillTrigger: WatermillConfig{PublishTopic: topic}}}
 
@@ -66,7 +66,7 @@ func TestOutput_PublishError(t *testing.T) {
 
 	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
 		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
-	})).Return(msg, nil)
+	}), mock.AnythingOfType("core.binaryModifier")).Return(msg, nil)
 
 	pub := mockPublisher{}
 	pub.On("Publish", topic, msg).Return(errors.New(""))
@@ -92,7 +92,7 @@ func TestOutput(t *testing.T) {
 	marshaler := mockMarshaler{}
 	marshaler.On("Execute", mock.MatchedBy(func(envelope types.MessageEnvelope) bool {
 		return ctx.CorrelationID() == envelope.CorrelationID && ctx.ResponseContentType() == envelope.ContentType && bytes.Equal(ctx.ResponseData(), envelope.Payload)
-	})).Return(&marshaled, nil)
+	}), mock.AnythingOfType("core.binaryModifier")).Return(&marshaled, nil)
 
 	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute, watermillConfig: &WatermillConfigWrapper{WatermillTrigger: WatermillConfig{PublishTopic: topic}}}
 
@@ -123,7 +123,7 @@ func TestBackground_MarshalError(t *testing.T) {
 
 	marshaler := mockMarshaler{}
 
-	marshaler.On("Execute", env).Return(nil, errors.New(""))
+	marshaler.On("Execute", env, mock.AnythingOfType("core.binaryModifier")).Return(nil, errors.New(""))
 
 	sut := watermillTrigger{marshaler: marshaler.Execute}
 
@@ -145,7 +145,7 @@ func TestBackground_PublishError(t *testing.T) {
 
 	marshaler := mockMarshaler{}
 
-	marshaler.On("Execute", env).Return(msg, nil)
+	marshaler.On("Execute", env, mock.AnythingOfType("core.binaryModifier")).Return(msg, nil)
 
 	pub := mockPublisher{}
 	pub.On("Publish", topic, msg).Return(errors.New(""))
@@ -172,7 +172,7 @@ func TestBackground(t *testing.T) {
 	pub.On("Publish", topic, &marshaled).Return(nil)
 
 	marshaler := mockMarshaler{}
-	marshaler.On("Execute", env).Return(&marshaled, nil)
+	marshaler.On("Execute", env, mock.AnythingOfType("core.binaryModifier")).Return(&marshaled, nil)
 
 	sut := watermillTrigger{pub: &pub, marshaler: marshaler.Execute}
 

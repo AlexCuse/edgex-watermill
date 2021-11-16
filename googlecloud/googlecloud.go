@@ -35,6 +35,7 @@ func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageC
 	case "rawoutput":
 		fmt = &ewm.RawOutputWireFormat{}
 	case "edgex":
+		fmt = &ewm.EdgeXWireFormat{}
 	default:
 		fmt = &ewm.EdgeXWireFormat{}
 	}
@@ -44,6 +45,7 @@ func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageC
 		pub,
 		sub,
 		fmt,
+		&config,
 	)
 }
 
@@ -109,5 +111,5 @@ func Trigger(wc *ewm.WatermillConfigWrapper, cfg interfaces.TriggerConfig) (inte
 		fmt,
 		wc,
 		cfg,
-	), nil
+	)
 }

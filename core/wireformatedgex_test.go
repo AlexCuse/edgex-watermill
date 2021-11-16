@@ -17,7 +17,9 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
@@ -38,7 +40,7 @@ func TestEdgeXWireFormat_JSON_Marshal(t *testing.T) {
 
 	sut := EdgeXWireFormat{}
 
-	msg, err := sut.marshal(env)
+	msg, err := sut.marshal(env, nil)
 
 	require.Nil(t, err, "should not return error")
 
@@ -50,7 +52,38 @@ func TestEdgeXWireFormat_JSON_Marshal(t *testing.T) {
 	require.Zero(t, msg.Metadata.Get(EdgeXContentType), "dont use metadata for edgex format")
 }
 
+func TestEdgeXWireFormat_JSON_Marshal_Encrypt(t *testing.T) {
+	enc := []byte(uuid.NewString())
+
+	env := types.MessageEnvelope{
+		CorrelationID: uuid.New().String(),
+		Payload:       []byte(`{ "S": "OK" }`),
+		ContentType:   common.ContentTypeJSON,
+	}
+
+	jsn, _ := json.Marshal(env)
+
+	sut := EdgeXWireFormat{}
+
+	msg, err := sut.marshal(env, func(b []byte) ([]byte, error) {
+		if bytes.Equal(b, jsn) {
+			return enc, nil
+		}
+		return nil, fmt.Errorf("unexpected input to decrypt mock")
+	})
+
+	require.Nil(t, err, "should not return error")
+
+	require.NotNil(t, msg, "should return watermill message")
+
+	require.Equal(t, string(enc), string(msg.Payload), "should properly pass payload")
+	require.Equal(t, env.CorrelationID, msg.UUID, "need an ID")
+	require.Equal(t, env.CorrelationID, msg.Metadata.Get(middleware.CorrelationIDMetadataKey), "keep correlation ID for middleware routing if needed")
+	require.Zero(t, msg.Metadata.Get(EdgeXContentType), "dont use metadata for edgex format")
+}
+
 func TestEdgeXWireFormat_JSON_Unmarshal(t *testing.T) {
+
 	correlationID := uuid.New().String()
 
 	env := types.MessageEnvelope{CorrelationID: correlationID, Payload: []byte("OK")}
@@ -61,7 +94,35 @@ func TestEdgeXWireFormat_JSON_Unmarshal(t *testing.T) {
 
 	sut := EdgeXWireFormat{}
 
-	result, err := sut.unmarshal(msg)
+	result, err := sut.unmarshal(msg, nil)
+
+	require.Nil(t, err, "should not return error")
+	require.NotNil(t, result, "should return result")
+
+	require.NotSame(t, &env, &result, "should not be the same object")
+	require.Equal(t, env, result, "should properly pass payload")
+	require.Equal(t, correlationID, result.CorrelationID, "should read correlation ID from metadata if present")
+}
+
+func TestEdgeXWireFormat_JSON_Unmarshal_Decrypt(t *testing.T) {
+	enc := []byte(uuid.NewString())
+
+	correlationID := uuid.New().String()
+
+	env := types.MessageEnvelope{CorrelationID: correlationID, Payload: []byte("OK")}
+
+	jsn, _ := json.Marshal(env)
+
+	msg := message.NewMessage(uuid.New().String(), enc)
+
+	sut := EdgeXWireFormat{}
+
+	result, err := sut.unmarshal(msg, func(b []byte) ([]byte, error) {
+		if bytes.Equal(b, enc) {
+			return jsn, nil
+		}
+		return nil, fmt.Errorf("unexpected input to mock decrypt")
+	})
 
 	require.Nil(t, err, "should not return error")
 	require.NotNil(t, result, "should return result")
@@ -76,7 +137,7 @@ func TestEdgeXWireFormat_JSON_Unmarshal_JSONError(t *testing.T) {
 
 	sut := EdgeXWireFormat{}
 
-	result, err := sut.unmarshal(msg)
+	result, err := sut.unmarshal(msg, nil)
 
 	require.NotNil(t, err, "should return error")
 	require.Zero(t, result, "should not return result")
