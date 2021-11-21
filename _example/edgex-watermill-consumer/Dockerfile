@@ -15,8 +15,6 @@ RUN go mod download
 COPY . .
 COPY ./res ./res
 
-RUN go mod download
-
 RUN go build -o ./edgex-watermill-consumer ./...
 
 RUN apk info -a zeromq-dev
