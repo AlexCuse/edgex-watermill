@@ -1,0 +1,34 @@
+version: '2'
+services:
+  broker:
+    image: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+
+  edgex-watermill-producer:
+    volumes:
+      - ./edgex-watermill-producer/res:/res
+    depends_on:
+      - broker
+      - edgex-watermill-consumer
+    build:
+      context: edgex-watermill-producer/.
+    ports:
+      - "59730:80"
+    restart: always
+    environment:
+      EDGEX_SECURITY_SECRET_STORE: "false"
+
+  edgex-watermill-consumer:
+    volumes:
+      - ./edgex-watermill-consumer/res:/res
+    depends_on:
+      - broker
+    build:
+      context: edgex-watermill-consumer/.
+    ports:
+      - "59740:80"
+    restart: always
+    environment:
+      EDGEX_SECURITY_SECRET_STORE: "false"
