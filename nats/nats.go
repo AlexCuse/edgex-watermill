@@ -14,6 +14,20 @@ import (
 	"strings"
 )
 
+func Sender(config ewm.WatermillConfig, proceed bool) (ewm.WatermillSender, error) {
+	pub, err := Publisher(config)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ewm.NewWatermillSender(
+		pub,
+		proceed,
+		&config,
+	)
+}
+
 func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageClient, error) {
 	pub, err := Publisher(config)
 

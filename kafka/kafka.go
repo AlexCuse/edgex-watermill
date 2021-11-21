@@ -52,6 +52,20 @@ func kafkaProducerConfig(config ewm.WatermillConfig) kafka.PublisherConfig {
 	}
 }
 
+func Sender(config ewm.WatermillConfig, proceed bool) (ewm.WatermillSender, error) {
+	pub, err := Publisher(config)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ewm.NewWatermillSender(
+		pub,
+		proceed,
+		&config,
+	)
+}
+
 func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageClient, error) {
 	var pub message.Publisher
 	var sub message.Subscriber
