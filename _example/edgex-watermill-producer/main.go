@@ -41,13 +41,13 @@ func main() {
 
 	client, err := amqp.Client(context.Background(),
 		core.WatermillConfig{
-			Type:            "amqp",
-			BrokerUrl:       appSettings["BrokerURL"],
-			ClientId:        appSettings["ClientID"],
-			PublishTopic:    appSettings["WireFormat"],
-			WireFormat: appSettings["WireFormat"],
+			Type:                "amqp",
+			BrokerUrl:           appSettings["BrokerURL"],
+			ClientId:            appSettings["ClientID"],
+			PublishTopic:        appSettings["WireFormat"],
+			WireFormat:          appSettings["WireFormat"],
 			EncryptionAlgorithm: appSettings["EncryptionAlgorithm"],
-			EncryptionKey: appSettings["EncryptionKey"],
+			EncryptionKey:       appSettings["EncryptionKey"],
 			Optional: map[string]string{
 				"ClusterId": appSettings["ClusterID"],
 			},
