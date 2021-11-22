@@ -44,50 +44,40 @@ func newAESProtection(watermillConfig *WatermillConfig) (protection dataProtecti
 			return nil, err
 		}
 
+		aead, err := getAead(alg, key)
+
+		if err != nil {
+			return nil, err
+		}
+
 		protection = &aesProtection{
-			alg: alg,
-			key: key,
+			aead: aead,
 		}
 	}
 	return protection, err
 }
 
 type aesProtection struct {
-	alg string
-	key []byte
+	aead cipher.AEAD
 }
 
-func (ap aesProtection) encrypt(bytes []byte) ([]byte, error) {
+func (ap *aesProtection) encrypt(bytes []byte) ([]byte, error) {
 	dst := make([]byte, 0)
 
-	aead, err := getAead(ap.alg, ap.key)
+	nonce := make([]byte, ap.aead.NonceSize())
+	_, err := rand.Read(nonce)
 
 	if err != nil {
 		return dst, err
 	}
 
-	nonce := make([]byte, aead.NonceSize())
-	_, err = rand.Read(nonce)
-
-	if err != nil {
-		return dst, err
-	}
-
-	dst = aead.Seal(dst, nonce, bytes, nil)
-
-	fmt.Println("encrypted length: ", len(dst))
+	dst = ap.aead.Seal(dst, nonce, bytes, nil)
 
 	return dst, err
 }
 
-func (ap aesProtection) decrypt(bytes []byte) ([]byte, error) {
-	aead, err := getAead(ap.alg, ap.key)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return aead.Open(make([]byte, 0), nil, bytes, nil)
+func (ap *aesProtection) decrypt(bytes []byte) ([]byte, error) {
+	return ap.aead.Open(make([]byte, 0), nil, bytes, nil)
 }
 
 const (
