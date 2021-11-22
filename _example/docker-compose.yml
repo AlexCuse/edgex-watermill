@@ -13,7 +13,8 @@ services:
       - broker
       - edgex-watermill-consumer
     build:
-      context: edgex-watermill-producer/.
+      context: ..
+      dockerfile: ./_example/edgex-watermill-producer/Dockerfile
     ports:
       - "59730:80"
     restart: always
@@ -26,7 +27,8 @@ services:
     depends_on:
       - broker
     build:
-      context: edgex-watermill-consumer/.
+      context: ..
+      dockerfile: ./_example/edgex-watermill-consumer/Dockerfile
     ports:
       - "59740:80"
     restart: always
