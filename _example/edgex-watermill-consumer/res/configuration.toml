@@ -12,10 +12,10 @@
     Type = "watermill"
 
 [WatermillTrigger]
-    Type = "amqp"
-    BrokerUrl = "amqp://broker:5672"
+    Type = "jetstream"
+    BrokerUrl = "nats://broker:4222"
     WireFormat = "raw"
-    ClientId = "test-consumer"
+    ClientID = "test-consumer"
     SubscribeTopics = "singlebasetopic"
     EncryptionAlgorithm="aes256-sha512"
     EncryptionKey="217A24432646294A404E635266556A586E3272357538782F413F442A472D4B6150645367566B59703373367639792442264529482B4D6251655468576D5A7134"

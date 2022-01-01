@@ -4,9 +4,10 @@ go 1.15
 
 require (
 	cloud.google.com/go/pubsub v1.6.1
-	github.com/AlexCuse/etm v0.0.0-20211022124535-b53962804cd5 // indirect
+	github.com/AlexCuse/etm v0.0.0-20211022124535-b53962804cd5
+	github.com/AlexCuse/watermill-jetstream v0.0.1
 	github.com/Shopify/sarama v1.27.2
-	github.com/ThreeDotsLabs/watermill v1.2.0-rc.3
+	github.com/ThreeDotsLabs/watermill v1.2.0-rc.9
 	github.com/ThreeDotsLabs/watermill-amqp v1.1.0
 	github.com/ThreeDotsLabs/watermill-googlecloud v1.0.9
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0

@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/alexcuse/edgex-watermill/v2/amqp"
 	"github.com/alexcuse/edgex-watermill/v2/core"
+	"github.com/alexcuse/edgex-watermill/v2/jetstream"
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg"
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
@@ -39,10 +39,10 @@ func main() {
 
 	appSettings := service.ApplicationSettings()
 
-	client, err := amqp.Client(context.Background(),
+	client, err := jetstream.Client(context.Background(),
 		core.WatermillConfig{
-			Type:                "amqp",
-			BrokerUrl:           appSettings["BrokerURL"],
+			Type:                appSettings["MessageBusType"],
+			BrokerUrl:           appSettings["BrokerUrl"],
 			ClientId:            appSettings["ClientID"],
 			PublishTopic:        appSettings["WireFormat"],
 			WireFormat:          appSettings["WireFormat"],

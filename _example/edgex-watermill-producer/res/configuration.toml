@@ -12,10 +12,10 @@
     Type = "http"
 
 [ApplicationSettings]
-    MessageBusType = "amqp"
+    MessageBusType = "jetstream"
+    BrokerUrl = "nats://broker:4222"
     MessageBusPublishTopic = "singlebasetopic"
     WireFormat = "raw"
-    BrokerURL = "amqp://broker:5672"
     ClientID="test-producer"
     ClusterID="test-cluster"
     EncryptionAlgorithm="aes256-sha512"
