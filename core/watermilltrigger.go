@@ -149,6 +149,14 @@ func (t *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, b
 	}
 
 	for _, topic := range t.topics {
+		if si, ok := t.sub.(message.SubscribeInitializer); ok {
+			err := si.SubscribeInitialize(topic)
+
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		tributary, err := t.sub.Subscribe(t.context, topic)
 
 		if err != nil {

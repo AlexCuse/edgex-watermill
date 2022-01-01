@@ -36,7 +36,10 @@ func main() {
 	os.Exit(0)
 }
 
+var cnt = 0
+
 func printMessage(edgexcontext interfaces.AppFunctionContext, param interface{}) (bool, interface{}) {
-	edgexcontext.LoggingClient().Infof("message received: %+v", param)
+	cnt++
+	edgexcontext.LoggingClient().Infof("message received: %+v (%d)", param, cnt)
 	return false, nil
 }
