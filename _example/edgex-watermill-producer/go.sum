@@ -37,8 +37,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/AlexCuse/etm v0.0.0-20211022124535-b53962804cd5 h1:GbJNC43C5fQWQGl2zvrb1qpIQ01mHl1eoOx+wm656G0=
 github.com/AlexCuse/etm v0.0.0-20211022124535-b53962804cd5/go.mod h1:TO1gQ8/Q8Ab/XnJLkQw4cG5s2kIJf0yKbMFuKlCmvts=
-github.com/AlexCuse/watermill-jetstream v0.0.1 h1:jSZ+v7isNna70H/A1WJn66+F3vQMExbdRAarnCkQYA0=
-github.com/AlexCuse/watermill-jetstream v0.0.1/go.mod h1:zePqg8pP/p5dJ/rM3+4UvrngyVmdAgZ639TAVsMu7gQ=
+github.com/AlexCuse/watermill-jetstream v0.0.2 h1:3TPOKGhLpzi+FePWX/ovxZcmScVnYpzvkyHzOQvN4wg=
+github.com/AlexCuse/watermill-jetstream v0.0.2/go.mod h1:zePqg8pP/p5dJ/rM3+4UvrngyVmdAgZ639TAVsMu7gQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DataDog/datadog-go v2.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=

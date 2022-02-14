@@ -83,9 +83,10 @@ func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageC
 
 func Publisher(config ewm.WatermillConfig) (message.Publisher, error) {
 	return _nats.NewPublisher(_nats.PublisherConfig{
-		URL:         config.BrokerUrl,
-		Marshaler:   _nats.GobMarshaler{},
-		NatsOptions: defaultNatsOptions(),
+		URL:           config.BrokerUrl,
+		Marshaler:     _nats.GobMarshaler{},
+		NatsOptions:   defaultNatsOptions(),
+		AutoProvision: true,
 	}, watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
@@ -99,6 +100,7 @@ func Subscriber(config ewm.WatermillConfig) (message.Subscriber, error) {
 		//TODO
 		SubscribeOptions: []nats.SubOpt{nats.DeliverNew()},
 		Unmarshaler:      _nats.GobMarshaler{},
+		AutoProvision:    true,
 	}, watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
