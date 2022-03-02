@@ -37,6 +37,10 @@ func main() {
 		os.Exit(-1)
 	}
 
+	factory := NewJetstreamStoreFactory(serviceKey)
+
+	service.RegisterCustomStoreFactory("jetstream", factory.NewStore)
+
 	appSettings := service.ApplicationSettings()
 
 	client, err := jetstream.Client(context.Background(),
@@ -69,16 +73,41 @@ func main() {
 	os.Exit(0)
 }
 
+var sent = 0
+
 func (s sender) send(edgexcontext interfaces.AppFunctionContext, param interface{}) (bool, interface{}) {
-	env := param.(types.MessageEnvelope)
+	sent = sent + 1
+	if _, ok := param.(types.MessageEnvelope); ok {
+		retryData, err := json.Marshal(param)
 
-	err := s.client.Publish(env, s.topic)
+		if err != nil {
+			edgexcontext.LoggingClient().Errorf("failed to unmarshal: %s", err.Error())
+		}
 
-	if err != nil {
-		edgexcontext.LoggingClient().Errorf("Failed to publish: %s", err.Error())
+		edgexcontext.SetRetryData(retryData)
+
+		return false, fmt.Errorf("cant process now setting retry data (%d)", sent)
 	}
 
-	return false, nil
+	bytesFromStoreForward := param.([]byte)
+
+	var env types.MessageEnvelope
+
+	err := json.Unmarshal(bytesFromStoreForward, &env)
+
+	if err != nil {
+		return false, err
+	}
+
+	err = s.client.Publish(env, s.topic)
+
+	if err != nil {
+		edgexcontext.LoggingClient().Errorf("Failed to publish: %s (%d)", err.Error(), sent)
+	} else {
+		edgexcontext.LoggingClient().Infof("Published on retry (%d)", sent)
+	}
+
+	return false, err
 }
 
 func buildMessageEnvelope(edgexcontext interfaces.AppFunctionContext, param interface{}) (bool, interface{}) {

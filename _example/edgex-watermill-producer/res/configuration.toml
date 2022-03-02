@@ -6,7 +6,23 @@
     RequestTimeout = "30s"
 
 [Writable]
-    LogLevel = "DEBUG"
+    LogLevel = "TRACE"
+    [Writable.StoreAndForward]
+        Enabled = true
+        RetryInterval = "30s"
+        MaxRetries = 5
+
+[Writable.InsecureSecrets]
+    [Writable.InsecureSecrets.DB]
+        path = "jetstream"
+        [Writable.InsecureSecrets.DB.Secrets]
+            username = ""
+            password = ""
+
+[Database]
+    Type = "jetstream"
+    Host = "broker"
+    Port = 4222
 
 [Trigger]
     Type = "http"
