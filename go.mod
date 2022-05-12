@@ -12,16 +12,22 @@ require (
 	github.com/ThreeDotsLabs/watermill-googlecloud v1.0.9
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.0
 	github.com/ThreeDotsLabs/watermill-nats v1.0.5
-	github.com/edgexfoundry/app-functions-sdk-go/v2 v2.0.2-dev.42
-	github.com/edgexfoundry/go-mod-bootstrap/v2 v2.0.1-dev.20
-	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.0.1-dev.27
-	github.com/edgexfoundry/go-mod-messaging/v2 v2.0.2-dev.7
-	github.com/fxamacker/cbor/v2 v2.3.0
+	github.com/edgexfoundry/app-functions-sdk-go/v2 v2.2.0
+	github.com/edgexfoundry/go-mod-bootstrap/v2 v2.2.0
+	github.com/edgexfoundry/go-mod-core-contracts/v2 v2.2.0
+	github.com/edgexfoundry/go-mod-messaging/v2 v2.2.0
+	github.com/fxamacker/cbor/v2 v2.4.0
+	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/nats-io/jwt v1.2.2 // indirect
 	github.com/nats-io/nats.go v1.13.1-0.20220202232944-a0a6a71ede98
 	github.com/nats-io/stan.go v0.8.3
+	github.com/streadway/amqp v1.0.0 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
+	go.opencensus.io v0.23.0 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/tools v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
