@@ -18,9 +18,10 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/util"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/util"
 )
 
 type WatermillSender interface {
@@ -35,7 +36,9 @@ type watermillSender struct {
 }
 
 func NewWatermillSender(pub message.Publisher, proceed bool, config *WatermillConfig) (WatermillSender, error) {
-	var err error
+	if config == nil {
+		return nil, fmt.Errorf("missing watermill config")
+	}
 
 	s := &watermillSender{
 		pub:              pub,
@@ -44,12 +47,11 @@ func NewWatermillSender(pub message.Publisher, proceed bool, config *WatermillCo
 		continuePipeline: proceed,
 	}
 
-	if config != nil {
-		protection, err := newAESProtection(config)
+	var protection dataProtection
+	protection, err := newAESProtection(config)
 
-		if err == nil && protection != nil { // else err is going to be returned
-			s.encryptor = protection.encrypt
-		}
+	if err == nil && protection != nil { // else err is going to be returned
+		s.encryptor = protection.encrypt
 	}
 
 	return s, err

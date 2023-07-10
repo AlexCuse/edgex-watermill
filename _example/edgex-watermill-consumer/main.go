@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	ewm "github.com/alexcuse/edgex-watermill/v2"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"os"
+
+	ewm "github.com/alexcuse/edgex-watermill/v2"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
 )
 
 const (

@@ -2,18 +2,18 @@ package edgex_watermill
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/alexcuse/edgex-watermill/v2/amqp"
 	"github.com/alexcuse/edgex-watermill/v2/core"
 	"github.com/alexcuse/edgex-watermill/v2/googlecloud"
-	"github.com/alexcuse/edgex-watermill/v2/jetstream"
 	"github.com/alexcuse/edgex-watermill/v2/kafka"
 	"github.com/alexcuse/edgex-watermill/v2/nats"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"strings"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
 )
 
-func Register(service interfaces.ApplicationService) {
-	service.RegisterCustomTriggerFactory("watermill", buildTrigger)
+func Register(service interfaces.ApplicationService) error {
+	return service.RegisterCustomTriggerFactory("watermill", buildTrigger)
 }
 
 func buildTrigger(config interfaces.TriggerConfig) (interfaces.Trigger, error) {
@@ -26,10 +26,8 @@ func buildTrigger(config interfaces.TriggerConfig) (interfaces.Trigger, error) {
 	}
 
 	switch strings.ToLower(cfg.WatermillTrigger.Type) {
-	case "nats":
+	case "nats", "jetstream":
 		return nats.Trigger(cfg, config)
-	case "jetstream":
-		return jetstream.Trigger(cfg, config)
 	case "kafka":
 		return kafka.Trigger(cfg, config)
 	case "amqp":

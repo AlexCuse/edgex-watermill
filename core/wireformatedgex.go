@@ -18,15 +18,15 @@ package core
 
 import (
 	"encoding/json"
+
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/fxamacker/cbor/v2"
 )
 
 type EdgeXWireFormat struct {
-	protection dataProtection
 }
 
 func (*EdgeXWireFormat) marshal(envelope types.MessageEnvelope, encrypt binaryModifier) (*message.Message, error) {

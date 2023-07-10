@@ -18,7 +18,7 @@ package core
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 )
 
 type RawInputWireFormat struct{}

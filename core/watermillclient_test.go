@@ -18,13 +18,14 @@ package core
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestNewWatermillClient(t *testing.T) {

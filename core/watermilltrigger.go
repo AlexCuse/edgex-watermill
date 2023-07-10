@@ -19,14 +19,15 @@ package core
 import (
 	"context"
 	"fmt"
-	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/util"
-	"github.com/edgexfoundry/go-mod-bootstrap/v2/bootstrap"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
 	"strings"
 	"sync"
+
+	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/util"
+	"github.com/edgexfoundry/go-mod-bootstrap/v3/bootstrap"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 )
 
 type watermillTrigger struct {
@@ -143,9 +144,7 @@ func (t *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, b
 		t.topics = append(t.topics, cfg.SubscribeTopics)
 	} else {
 		topics := util.DeleteEmptyAndTrim(strings.FieldsFunc(cfg.SubscribeTopics, util.SplitComma))
-		for _, topic := range topics {
-			t.topics = append(t.topics, topic)
-		}
+		t.topics = append(t.topics, topics...)
 	}
 
 	for _, topic := range t.topics {
@@ -191,7 +190,11 @@ func (t *watermillTrigger) Initialize(wg *sync.WaitGroup, ctx context.Context, b
 				return
 
 			case bg := <-background:
-				go t.background(bg)
+				go func() {
+					if bgErr := t.background(bg); bgErr != nil {
+						t.edgeXConfig.Logger.Errorf("Error processing background message: %s", bgErr)
+					}
+				}()
 
 			}
 		}

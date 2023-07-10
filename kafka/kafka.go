@@ -18,13 +18,14 @@ package kafka
 
 import (
 	"context"
+	"strings"
+
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	ewm "github.com/alexcuse/edgex-watermill/v2/core"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"strings"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 )
 
 func kafkaConsumerConfig(config ewm.WatermillConfig) kafka.SubscriberConfig {

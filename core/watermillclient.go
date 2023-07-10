@@ -18,9 +18,11 @@ package core
 
 import (
 	"context"
+	"time"
+
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -32,6 +34,16 @@ type watermillClient struct {
 	unmarshaler WatermillUnmarshaler
 	decryptor   binaryModifier
 	encryptor   binaryModifier
+}
+
+func (c *watermillClient) Request(message types.MessageEnvelope, requestTopic string, responseTopicPrefix string, timeout time.Duration) (*types.MessageEnvelope, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *watermillClient) Unsubscribe(topics ...string) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 const (
