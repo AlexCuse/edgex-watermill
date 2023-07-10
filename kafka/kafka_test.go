@@ -17,13 +17,14 @@
 package kafka
 
 import (
+	"testing"
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	ewm "github.com/alexcuse/edgex-watermill/v2/core"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestKafkaConsumerConfig(t *testing.T) {
@@ -50,7 +51,7 @@ func TestKafkaConsumerConfig(t *testing.T) {
 	require.Equal(t, 256, watermillConfig.OverwriteSaramaConfig.ChannelBufferSize)
 	require.True(t, watermillConfig.OverwriteSaramaConfig.Consumer.Offsets.AutoCommit.Enable)
 	require.Equal(t, 1*time.Second, watermillConfig.OverwriteSaramaConfig.Consumer.Offsets.AutoCommit.Interval)
-	require.Equal(t, 250*time.Millisecond, watermillConfig.OverwriteSaramaConfig.Consumer.MaxWaitTime)
+	require.Equal(t, 500*time.Millisecond, watermillConfig.OverwriteSaramaConfig.Consumer.MaxWaitTime)
 	require.Equal(t, 3*time.Second, watermillConfig.OverwriteSaramaConfig.Consumer.Group.Heartbeat.Interval)
 	require.Equal(t, 10*time.Second, watermillConfig.OverwriteSaramaConfig.Consumer.Group.Session.Timeout)
 }

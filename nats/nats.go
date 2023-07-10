@@ -19,15 +19,17 @@ package nats
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/ThreeDotsLabs/watermill"
-	_nats "github.com/ThreeDotsLabs/watermill-nats/pkg/nats"
+	_nats "github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
 	"github.com/ThreeDotsLabs/watermill/message"
 	ewm "github.com/alexcuse/edgex-watermill/v2/core"
 	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
 	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/nats-io/stan.go"
-	"os"
-	"strings"
+	"github.com/nats-io/nats.go"
 )
 
 func Sender(config ewm.WatermillConfig, proceed bool) (ewm.WatermillSender, error) {
@@ -81,21 +83,34 @@ func Client(ctx context.Context, config ewm.WatermillConfig) (messaging.MessageC
 	)
 }
 
+func jetstreamDisabled(config ewm.WatermillConfig) bool {
+	r := false
+	if v, ok := config.Optional["JetstreamDisabled"]; ok {
+		if b, err := strconv.ParseBool(v); err == nil {
+			r = b
+		}
+	}
+	return r
+}
 func Publisher(config ewm.WatermillConfig) (message.Publisher, error) {
-	return _nats.NewStreamingPublisher(_nats.StreamingPublisherConfig{
-		ClusterID:   config.Optional["ClusterId"],
-		ClientID:    fmt.Sprintf("pub-%s", config.ClientId),
-		StanOptions: []stan.Option{stan.NatsURL(config.BrokerUrl)},
-		Marshaler:   _nats.GobMarshaler{},
+	natsOptions := []nats.Option{}
+	natsOptions = append(natsOptions, nats.Name(fmt.Sprintf("pub-%s", config.ClientId)))
+	return _nats.NewPublisher(_nats.PublisherConfig{
+		URL:         config.BrokerUrl,
+		NatsOptions: natsOptions,
+		JetStream:   _nats.JetStreamConfig{Disabled: jetstreamDisabled(config)},
 	}, watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
 func Subscriber(config ewm.WatermillConfig) (message.Subscriber, error) {
-	return _nats.NewStreamingSubscriber(_nats.StreamingSubscriberConfig{
-		ClusterID:   config.Optional["ClusterId"],
-		ClientID:    fmt.Sprintf("sub-%s", config.ClientId),
-		StanOptions: []stan.Option{stan.NatsURL(config.BrokerUrl)},
-		Unmarshaler: _nats.GobMarshaler{},
+	natsOptions := []nats.Option{}
+	natsOptions = append(natsOptions, nats.Name(fmt.Sprintf("sub-%s", config.ClientId)))
+
+	return _nats.NewSubscriber(_nats.SubscriberConfig{
+		URL:              config.BrokerUrl,
+		QueueGroupPrefix: config.ConsumerGroup,
+		NatsOptions:      natsOptions,
+		JetStream:        _nats.JetStreamConfig{Disabled: jetstreamDisabled(config)},
 	}, watermill.NewStdLoggerWithOut(os.Stdout, true, false))
 }
 
