@@ -25,8 +25,8 @@ import (
 	_amqp "github.com/ThreeDotsLabs/watermill-amqp/v2/pkg/amqp"
 	"github.com/ThreeDotsLabs/watermill/message"
 	ewm "github.com/alexcuse/edgex-watermill/v2/core"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 )
 
 func Sender(config ewm.WatermillConfig, proceed bool) (ewm.WatermillSender, error) {

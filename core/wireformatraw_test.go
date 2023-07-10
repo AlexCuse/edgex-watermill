@@ -19,13 +19,14 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"testing"
+
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRawMessageFormat_Marshal_HasCorrelationID(t *testing.T) {

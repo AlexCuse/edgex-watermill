@@ -27,8 +27,8 @@ import (
 	_nats "github.com/ThreeDotsLabs/watermill-nats/v2/pkg/nats"
 	"github.com/ThreeDotsLabs/watermill/message"
 	ewm "github.com/alexcuse/edgex-watermill/v2/core"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/nats-io/nats.go"
 )
 

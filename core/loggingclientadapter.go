@@ -18,7 +18,7 @@ package core
 
 import (
 	"github.com/ThreeDotsLabs/watermill"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/clients/logger"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/clients/logger"
 )
 
 type edgexWatermillAdapter struct {

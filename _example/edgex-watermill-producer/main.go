@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/alexcuse/edgex-watermill/v2/core"
 	"github.com/alexcuse/edgex-watermill/v2/jetstream"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/google/uuid"
-	"os"
 )
 
 const (

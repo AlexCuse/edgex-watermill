@@ -9,11 +9,11 @@ import (
 	"github.com/alexcuse/edgex-watermill/v2/googlecloud"
 	"github.com/alexcuse/edgex-watermill/v2/kafka"
 	"github.com/alexcuse/edgex-watermill/v2/nats"
-	"github.com/edgexfoundry/app-functions-sdk-go/v2/pkg/interfaces"
+	"github.com/edgexfoundry/app-functions-sdk-go/v3/pkg/interfaces"
 )
 
-func Register(service interfaces.ApplicationService) {
-	service.RegisterCustomTriggerFactory("watermill", buildTrigger)
+func Register(service interfaces.ApplicationService) error {
+	return service.RegisterCustomTriggerFactory("watermill", buildTrigger)
 }
 
 func buildTrigger(config interfaces.TriggerConfig) (interfaces.Trigger, error) {
